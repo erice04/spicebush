@@ -1,0 +1,1343 @@
+{
+  "pca": {
+    "points": [
+      {
+        "id": 1,
+        "pc1": 1.7248288685251856,
+        "pc2": -0.8759189417985874,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.23089641634098834,
+        "is_prediction": false
+      },
+      {
+        "id": 2,
+        "pc1": -0.7341927408207229,
+        "pc2": -0.32778789575052153,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.6998424471692166,
+        "is_prediction": false
+      },
+      {
+        "id": 3,
+        "pc1": -0.33557381468051056,
+        "pc2": -0.13023646554869692,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.5857823608789232,
+        "is_prediction": false
+      },
+      {
+        "id": 4,
+        "pc1": -0.5864999649965884,
+        "pc2": -0.6637414732137176,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.6772682809089021,
+        "is_prediction": false
+      },
+      {
+        "id": 5,
+        "pc1": 0.8356984537243554,
+        "pc2": -1.0303210031726178,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.7789186113156144,
+        "is_prediction": false
+      },
+      {
+        "id": 6,
+        "pc1": -0.6119126776232338,
+        "pc2": -0.3671344853804376,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.6649056026834448,
+        "is_prediction": false
+      },
+      {
+        "id": 7,
+        "pc1": 4.097913967597142,
+        "pc2": -2.3559040905131767,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.6169128028144961,
+        "is_prediction": false
+      },
+      {
+        "id": 8,
+        "pc1": 4.429815234802426,
+        "pc2": -1.9897624054333412,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.2404659945641311,
+        "is_prediction": false
+      },
+      {
+        "id": 9,
+        "pc1": 2.040032324605485,
+        "pc2": -1.3796328820783224,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.5024826349229223,
+        "is_prediction": false
+      },
+      {
+        "id": 10,
+        "pc1": 0.7251967888308183,
+        "pc2": -0.8208556219501943,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.8268432019679763,
+        "is_prediction": false
+      },
+      {
+        "id": 11,
+        "pc1": -1.524932931808705,
+        "pc2": 0.25151927449253275,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.7682913229067321,
+        "is_prediction": true
+      },
+      {
+        "id": 12,
+        "pc1": 1.6898023297912268,
+        "pc2": -1.0983541026976413,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.6150116510611372,
+        "is_prediction": true
+      },
+      {
+        "id": 13,
+        "pc1": -1.4568158957624076,
+        "pc2": -0.027284945684598418,
+        "sex": "J",
+        "sex_known": false,
+        "probability_female": 0.8069032701420568,
+        "is_prediction": true
+      },
+      {
+        "id": 14,
+        "pc1": -1.264969898465625,
+        "pc2": 0.22394109037999702,
+        "sex": "J",
+        "sex_known": false,
+        "probability_female": 0.7434706958209487,
+        "is_prediction": true
+      },
+      {
+        "id": 15,
+        "pc1": 3.292002584974005,
+        "pc2": -1.6679276204123792,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.37996241968172484,
+        "is_prediction": false
+      },
+      {
+        "id": 16,
+        "pc1": 2.520143928610364,
+        "pc2": -1.2349002878065056,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.449974796748409,
+        "is_prediction": false
+      },
+      {
+        "id": 17,
+        "pc1": -1.6407714612519795,
+        "pc2": 0.02109126496109495,
+        "sex": "J",
+        "sex_known": false,
+        "probability_female": 0.7190413395682638,
+        "is_prediction": true
+      },
+      {
+        "id": 18,
+        "pc1": -1.2984720992484708,
+        "pc2": 0.23128998913451515,
+        "sex": "J",
+        "sex_known": false,
+        "probability_female": 0.6251551560520036,
+        "is_prediction": true
+      },
+      {
+        "id": 19,
+        "pc1": -0.988140887231741,
+        "pc2": 0.09334069508077443,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.7119998545341353,
+        "is_prediction": false
+      },
+      {
+        "id": 20,
+        "pc1": -0.881707670960163,
+        "pc2": 0.069648508452502,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.6742984783035717,
+        "is_prediction": false
+      },
+      {
+        "id": 21,
+        "pc1": -0.5070712308399565,
+        "pc2": -0.09133853358085416,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.6248660018933632,
+        "is_prediction": false
+      },
+      {
+        "id": 22,
+        "pc1": -0.8706406962870341,
+        "pc2": 0.047248324124842214,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.657255769484344,
+        "is_prediction": false
+      },
+      {
+        "id": 23,
+        "pc1": -1.4088335300127832,
+        "pc2": -0.3238043222122264,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.775989292255942,
+        "is_prediction": false
+      },
+      {
+        "id": 24,
+        "pc1": -1.3353590526515164,
+        "pc2": -0.3337309886866596,
+        "sex": "J",
+        "sex_known": false,
+        "probability_female": 0.7641816626493542,
+        "is_prediction": true
+      },
+      {
+        "id": 25,
+        "pc1": -0.2271119172242163,
+        "pc2": -0.8334950958070558,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.7135388655597095,
+        "is_prediction": false
+      },
+      {
+        "id": 26,
+        "pc1": -1.2608246519764685,
+        "pc2": 0.17181439269550028,
+        "sex": "J",
+        "sex_known": false,
+        "probability_female": 0.7940309440739057,
+        "is_prediction": true
+      },
+      {
+        "id": 27,
+        "pc1": -1.333380446193103,
+        "pc2": -0.35149152800825506,
+        "sex": "J",
+        "sex_known": false,
+        "probability_female": 0.7809589438463884,
+        "is_prediction": true
+      },
+      {
+        "id": 28,
+        "pc1": -1.0329052093838427,
+        "pc2": 0.12221370208801093,
+        "sex": "J",
+        "sex_known": false,
+        "probability_female": 0.7215317772796399,
+        "is_prediction": true
+      },
+      {
+        "id": 29,
+        "pc1": -1.2313601398664804,
+        "pc2": -0.39931175596517415,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.7603657614784003,
+        "is_prediction": false
+      },
+      {
+        "id": 30,
+        "pc1": -1.3193895820689192,
+        "pc2": -0.345529880187539,
+        "sex": "J",
+        "sex_known": false,
+        "probability_female": 0.7677124837955123,
+        "is_prediction": true
+      },
+      {
+        "id": 31,
+        "pc1": -0.988866734261915,
+        "pc2": 0.36767616159915556,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.6077737343161207,
+        "is_prediction": false
+      },
+      {
+        "id": 32,
+        "pc1": -1.1734310418813452,
+        "pc2": -0.09467793696148089,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.705797745501124,
+        "is_prediction": false
+      },
+      {
+        "id": 33,
+        "pc1": -0.8666568835221984,
+        "pc2": 0.5910822041298113,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.7199837568772427,
+        "is_prediction": false
+      },
+      {
+        "id": 34,
+        "pc1": -0.6458781001248206,
+        "pc2": 0.22298929868812115,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.5611717397644096,
+        "is_prediction": false
+      },
+      {
+        "id": 35,
+        "pc1": -0.27553262563264747,
+        "pc2": 0.10124585252196962,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.576013934546724,
+        "is_prediction": false
+      },
+      {
+        "id": 36,
+        "pc1": 0.14562159819345016,
+        "pc2": 0.8522932804991894,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.4441277056510743,
+        "is_prediction": false
+      },
+      {
+        "id": 37,
+        "pc1": -0.48356293193989536,
+        "pc2": 0.4580495594185027,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.6012401763090691,
+        "is_prediction": false
+      },
+      {
+        "id": 38,
+        "pc1": -0.4420963775187187,
+        "pc2": -0.10110254752176955,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.5964925722353533,
+        "is_prediction": false
+      },
+      {
+        "id": 39,
+        "pc1": -1.1447200903193009,
+        "pc2": 0.15920781881024576,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.6592018861410962,
+        "is_prediction": false
+      },
+      {
+        "id": 40,
+        "pc1": -0.91894393304425,
+        "pc2": -0.23403459726093293,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.6872825639805444,
+        "is_prediction": false
+      },
+      {
+        "id": 41,
+        "pc1": 0.12054921585591148,
+        "pc2": -0.038119703189374535,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.5097725906902317,
+        "is_prediction": false
+      },
+      {
+        "id": 42,
+        "pc1": 0.9644413484449602,
+        "pc2": -0.6413132410581036,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.6232466684066328,
+        "is_prediction": false
+      },
+      {
+        "id": 43,
+        "pc1": 1.8900970510059043,
+        "pc2": 0.06854343873199617,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.5210507098990019,
+        "is_prediction": false
+      },
+      {
+        "id": 44,
+        "pc1": 0.3528014673055495,
+        "pc2": -0.17666635419463741,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.6840315302552409,
+        "is_prediction": false
+      },
+      {
+        "id": 45,
+        "pc1": 0.670512570579647,
+        "pc2": 0.840913377256084,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.4612139124386764,
+        "is_prediction": false
+      },
+      {
+        "id": 46,
+        "pc1": -1.1884417037506454,
+        "pc2": -0.11047184763011657,
+        "sex": "J",
+        "sex_known": false,
+        "probability_female": 0.7509514800235513,
+        "is_prediction": true
+      },
+      {
+        "id": 47,
+        "pc1": -0.43988859094773025,
+        "pc2": 0.19312925289492605,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.589658048304537,
+        "is_prediction": false
+      },
+      {
+        "id": 48,
+        "pc1": -1.0932629349738832,
+        "pc2": 0.1296743625135149,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.7966542183410762,
+        "is_prediction": false
+      },
+      {
+        "id": 49,
+        "pc1": -1.3313114674927127,
+        "pc2": -0.05128946328957162,
+        "sex": "J",
+        "sex_known": false,
+        "probability_female": 0.7671579200945455,
+        "is_prediction": true
+      },
+      {
+        "id": 50,
+        "pc1": -1.5517143502782285,
+        "pc2": -0.2823618921204782,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.6758224594680567,
+        "is_prediction": false
+      },
+      {
+        "id": 51,
+        "pc1": -1.5742341046394825,
+        "pc2": -0.27424288549651016,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.682082944284597,
+        "is_prediction": false
+      },
+      {
+        "id": 52,
+        "pc1": 0.4355648134386496,
+        "pc2": 1.0281511206123384,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.3085436385986222,
+        "is_prediction": false
+      },
+      {
+        "id": 53,
+        "pc1": 0.7574897876576818,
+        "pc2": 1.7614188534081547,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.3854815318441768,
+        "is_prediction": false
+      },
+      {
+        "id": 54,
+        "pc1": -1.5546593497782109,
+        "pc2": -0.2747038894175858,
+        "sex": "J",
+        "sex_known": false,
+        "probability_female": 0.8166026409467811,
+        "is_prediction": true
+      },
+      {
+        "id": 55,
+        "pc1": -1.3859777972010576,
+        "pc2": 0.21995456261158383,
+        "sex": "F",
+        "sex_known": true,
+        "probability_female": 0.6558613375281479,
+        "is_prediction": false
+      },
+      {
+        "id": 56,
+        "pc1": 4.519007078184473,
+        "pc2": 2.6018714389189928,
+        "sex": "M",
+        "sex_known": true,
+        "probability_female": 0.2877694666224184,
+        "is_prediction": false
+      },
+      {
+        "id": 57,
+        "pc1": -0.6648356762899676,
+        "pc2": 0.5374416601795781,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.6504575131627142,
+        "is_prediction": true
+      },
+      {
+        "id": 58,
+        "pc1": -1.067683904390395,
+        "pc2": -0.14340339650070466,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.7173121478079894,
+        "is_prediction": true
+      },
+      {
+        "id": 59,
+        "pc1": -1.0787316774612312,
+        "pc2": 0.15926467426690802,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.7062668283624614,
+        "is_prediction": true
+      },
+      {
+        "id": 60,
+        "pc1": -1.2109060279486008,
+        "pc2": -0.1244552951341428,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.7774090907196276,
+        "is_prediction": true
+      },
+      {
+        "id": 61,
+        "pc1": -0.6224731462925253,
+        "pc2": 1.410124913085684,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.6409986989112912,
+        "is_prediction": true
+      },
+      {
+        "id": 62,
+        "pc1": -0.9553407986836022,
+        "pc2": 0.3767183329910854,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.7127293862906543,
+        "is_prediction": true
+      },
+      {
+        "id": 63,
+        "pc1": -1.2269918007132008,
+        "pc2": 0.16647652641130653,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.782254394237676,
+        "is_prediction": true
+      },
+      {
+        "id": 64,
+        "pc1": -1.121445661764593,
+        "pc2": 0.43290445295581315,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.7472141660036515,
+        "is_prediction": true
+      },
+      {
+        "id": 65,
+        "pc1": -1.5952597845895065,
+        "pc2": -0.24252228705783133,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.8070491721241433,
+        "is_prediction": true
+      },
+      {
+        "id": 66,
+        "pc1": -1.5421676877557924,
+        "pc2": -0.2647781033600319,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.8021063704693784,
+        "is_prediction": true
+      },
+      {
+        "id": 67,
+        "pc1": 0.05734263786745234,
+        "pc2": -0.3824030446383885,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.6089916109561992,
+        "is_prediction": true
+      },
+      {
+        "id": 68,
+        "pc1": 2.00656453887314,
+        "pc2": 0.9912859160446653,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.25916032616939966,
+        "is_prediction": true
+      },
+      {
+        "id": 69,
+        "pc1": 1.3582634649198448,
+        "pc2": 0.33674958455657245,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.32926999661177214,
+        "is_prediction": true
+      },
+      {
+        "id": 70,
+        "pc1": 4.932480644620173,
+        "pc2": -0.21622934449100428,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.41059673551072084,
+        "is_prediction": true
+      },
+      {
+        "id": 71,
+        "pc1": 2.9902516478281034,
+        "pc2": 0.622536494697333,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.2569674240682005,
+        "is_prediction": true
+      },
+      {
+        "id": 72,
+        "pc1": 2.37167569750621,
+        "pc2": 1.793821084251639,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.18275300038705045,
+        "is_prediction": true
+      },
+      {
+        "id": 73,
+        "pc1": 4.694854546836908,
+        "pc2": 2.7990845990285758,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.13624542376822246,
+        "is_prediction": true
+      },
+      {
+        "id": 74,
+        "pc1": 0.37292909197185914,
+        "pc2": -0.15347590728235203,
+        "sex": "U",
+        "sex_known": false,
+        "probability_female": 0.49691592247954786,
+        "is_prediction": true
+      }
+    ],
+    "loadings": [
+      {
+        "variable": "dbh_cm",
+        "label": "DBH (cm)",
+        "pc1": 0.9050696242149197,
+        "pc2": -0.13775867514453685
+      },
+      {
+        "variable": "base_diameter_cm",
+        "label": "Base diameter (cm)",
+        "pc1": 0.9341477287839656,
+        "pc2": -0.2926501294716807
+      },
+      {
+        "variable": "stem_count",
+        "label": "Stem count",
+        "pc1": 0.652589231745263,
+        "pc2": 0.7653315608496444
+      },
+      {
+        "variable": "height_m",
+        "label": "Height (m)",
+        "pc1": 0.9270339030593606,
+        "pc2": -0.10936761737727445
+      }
+    ],
+    "explained_variance_ratio": [
+      0.7342042985393538,
+      0.1732061195855115,
+      0.07014056290964711,
+      0.022449018965487552
+    ]
+  },
+  "classification": {
+    "labeled_count": 42,
+    "unlabeled_count": 32,
+    "loocv_accuracy": 0.5714285714285714,
+    "confusion_matrix": {
+      "labels": [
+        "F",
+        "M"
+      ],
+      "matrix": [
+        [
+          20,
+          5
+        ],
+        [
+          13,
+          4
+        ]
+      ]
+    },
+    "loocv_predictions": [
+      {
+        "id": 1,
+        "actual_sex": "F",
+        "predicted_sex": "M",
+        "probability_female": 0.23089641634098834,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 2,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.6998424471692166,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 3,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.5857823608789232,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 4,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.6772682809089021,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 5,
+        "actual_sex": "M",
+        "predicted_sex": "F",
+        "probability_female": 0.7789186113156144,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 6,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.6649056026834448,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 7,
+        "actual_sex": "M",
+        "predicted_sex": "F",
+        "probability_female": 0.6169128028144961,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 8,
+        "actual_sex": "F",
+        "predicted_sex": "M",
+        "probability_female": 0.2404659945641311,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 9,
+        "actual_sex": "M",
+        "predicted_sex": "F",
+        "probability_female": 0.5024826349229223,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 10,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.8268432019679763,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 15,
+        "actual_sex": "F",
+        "predicted_sex": "M",
+        "probability_female": 0.37996241968172484,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 16,
+        "actual_sex": "M",
+        "predicted_sex": "M",
+        "probability_female": 0.449974796748409,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 19,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.7119998545341353,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 20,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.6742984783035717,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 21,
+        "actual_sex": "M",
+        "predicted_sex": "F",
+        "probability_female": 0.6248660018933632,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 22,
+        "actual_sex": "M",
+        "predicted_sex": "F",
+        "probability_female": 0.657255769484344,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 23,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.775989292255942,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 25,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.7135388655597095,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 29,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.7603657614784003,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 31,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.6077737343161207,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 32,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.705797745501124,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 33,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.7199837568772427,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 34,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.5611717397644096,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 35,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.576013934546724,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 36,
+        "actual_sex": "M",
+        "predicted_sex": "M",
+        "probability_female": 0.4441277056510743,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 37,
+        "actual_sex": "M",
+        "predicted_sex": "F",
+        "probability_female": 0.6012401763090691,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 38,
+        "actual_sex": "M",
+        "predicted_sex": "F",
+        "probability_female": 0.5964925722353533,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 39,
+        "actual_sex": "M",
+        "predicted_sex": "F",
+        "probability_female": 0.6592018861410962,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 40,
+        "actual_sex": "M",
+        "predicted_sex": "F",
+        "probability_female": 0.6872825639805444,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 41,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.5097725906902317,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 42,
+        "actual_sex": "M",
+        "predicted_sex": "F",
+        "probability_female": 0.6232466684066328,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 43,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.5210507098990019,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 44,
+        "actual_sex": "M",
+        "predicted_sex": "F",
+        "probability_female": 0.6840315302552409,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 45,
+        "actual_sex": "F",
+        "predicted_sex": "M",
+        "probability_female": 0.4612139124386764,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 47,
+        "actual_sex": "M",
+        "predicted_sex": "F",
+        "probability_female": 0.589658048304537,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 48,
+        "actual_sex": "M",
+        "predicted_sex": "F",
+        "probability_female": 0.7966542183410762,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 50,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.6758224594680567,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 51,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.682082944284597,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 52,
+        "actual_sex": "F",
+        "predicted_sex": "M",
+        "probability_female": 0.3085436385986222,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 53,
+        "actual_sex": "M",
+        "predicted_sex": "M",
+        "probability_female": 0.3854815318441768,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 55,
+        "actual_sex": "F",
+        "predicted_sex": "F",
+        "probability_female": 0.6558613375281479,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      },
+      {
+        "id": 56,
+        "actual_sex": "M",
+        "predicted_sex": "M",
+        "probability_female": 0.2877694666224184,
+        "is_prediction": true,
+        "evaluation": "loocv"
+      }
+    ],
+    "predictions": [
+      {
+        "id": 11,
+        "sex": "U",
+        "predicted_sex": "F",
+        "probability_female": 0.7682913229067321,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 12,
+        "sex": "U",
+        "predicted_sex": "F",
+        "probability_female": 0.6150116510611372,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 13,
+        "sex": "J",
+        "predicted_sex": "F",
+        "probability_female": 0.8069032701420568,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 14,
+        "sex": "J",
+        "predicted_sex": "F",
+        "probability_female": 0.7434706958209487,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 17,
+        "sex": "J",
+        "predicted_sex": "F",
+        "probability_female": 0.7190413395682638,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 18,
+        "sex": "J",
+        "predicted_sex": "F",
+        "probability_female": 0.6251551560520036,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 24,
+        "sex": "J",
+        "predicted_sex": "F",
+        "probability_female": 0.7641816626493542,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 26,
+        "sex": "J",
+        "predicted_sex": "F",
+        "probability_female": 0.7940309440739057,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 27,
+        "sex": "J",
+        "predicted_sex": "F",
+        "probability_female": 0.7809589438463884,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 28,
+        "sex": "J",
+        "predicted_sex": "F",
+        "probability_female": 0.7215317772796399,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 30,
+        "sex": "J",
+        "predicted_sex": "F",
+        "probability_female": 0.7677124837955123,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 46,
+        "sex": "J",
+        "predicted_sex": "F",
+        "probability_female": 0.7509514800235513,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 49,
+        "sex": "J",
+        "predicted_sex": "F",
+        "probability_female": 0.7671579200945455,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 54,
+        "sex": "J",
+        "predicted_sex": "F",
+        "probability_female": 0.8166026409467811,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 57,
+        "sex": "U",
+        "predicted_sex": "F",
+        "probability_female": 0.6504575131627142,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 58,
+        "sex": "U",
+        "predicted_sex": "F",
+        "probability_female": 0.7173121478079894,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 59,
+        "sex": "U",
+        "predicted_sex": "F",
+        "probability_female": 0.7062668283624614,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 60,
+        "sex": "U",
+        "predicted_sex": "F",
+        "probability_female": 0.7774090907196276,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 61,
+        "sex": "U",
+        "predicted_sex": "F",
+        "probability_female": 0.6409986989112912,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 62,
+        "sex": "U",
+        "predicted_sex": "F",
+        "probability_female": 0.7127293862906543,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 63,
+        "sex": "U",
+        "predicted_sex": "F",
+        "probability_female": 0.782254394237676,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 64,
+        "sex": "U",
+        "predicted_sex": "F",
+        "probability_female": 0.7472141660036515,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 65,
+        "sex": "U",
+        "predicted_sex": "F",
+        "probability_female": 0.8070491721241433,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 66,
+        "sex": "U",
+        "predicted_sex": "F",
+        "probability_female": 0.8021063704693784,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 67,
+        "sex": "U",
+        "predicted_sex": "F",
+        "probability_female": 0.6089916109561992,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 68,
+        "sex": "U",
+        "predicted_sex": "M",
+        "probability_female": 0.25916032616939966,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 69,
+        "sex": "U",
+        "predicted_sex": "M",
+        "probability_female": 0.32926999661177214,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 70,
+        "sex": "U",
+        "predicted_sex": "M",
+        "probability_female": 0.41059673551072084,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 71,
+        "sex": "U",
+        "predicted_sex": "M",
+        "probability_female": 0.2569674240682005,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 72,
+        "sex": "U",
+        "predicted_sex": "M",
+        "probability_female": 0.18275300038705045,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 73,
+        "sex": "U",
+        "predicted_sex": "M",
+        "probability_female": 0.13624542376822246,
+        "is_prediction": true,
+        "evaluation": "model"
+      },
+      {
+        "id": 74,
+        "sex": "U",
+        "predicted_sex": "M",
+        "probability_female": 0.49691592247954786,
+        "is_prediction": true,
+        "evaluation": "model"
+      }
+    ]
+  },
+  "preprocessing": {
+    "feature_columns": [
+      "dbh_cm",
+      "base_diameter_cm",
+      "stem_count",
+      "height_m"
+    ],
+    "labeled_sex_values": [
+      "F",
+      "M"
+    ],
+    "unlabeled_sex_values": [
+      "J",
+      "U"
+    ],
+    "imputed_features": {
+      "dbh_cm": "median",
+      "stem_count": "median for 'M' (multiple stems)"
+    },
+    "pca_sample_size": 74,
+    "classification_sample_size": 42
+  }
+}

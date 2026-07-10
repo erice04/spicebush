@@ -1,0 +1,57 @@
+.pca-biplot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.pca-biplot__svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.pca-biplot__axis-label {
+  font-size: 0.72rem;
+  fill: #4a5f4a;
+}
+
+.pca-biplot__arrow {
+  stroke: #6b7f5e;
+  stroke-width: 1.5;
+  marker-end: url(#pca-arrowhead);
+}
+
+.pca-biplot__arrow-label {
+  font-size: 0.68rem;
+  fill: #3d523d;
+  font-weight: 600;
+}
+
+.pca-biplot__points circle {
+  transition: r 0.12s ease, stroke-width 0.12s ease;
+}
+
+.pca-biplot__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.85rem;
+  font-size: 0.72rem;
+  color: #4a5f4a;
+}
+
+.pca-biplot__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pca-biplot__swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(45, 74, 45, 0.2);
+}
+
+.pca-biplot__swatch--gradient {
+  background: linear-gradient(90deg, #4a6fa5, #c45c8a);
+}

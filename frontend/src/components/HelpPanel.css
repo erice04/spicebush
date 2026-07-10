@@ -1,0 +1,335 @@
+.help-panel__fab {
+  flex-shrink: 0;
+  border: 1px solid #d4dcc8;
+  background: rgba(255, 255, 255, 0.96);
+  color: #2d4a2d;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 4px 16px rgba(26, 46, 26, 0.15);
+  backdrop-filter: blur(6px);
+}
+
+.help-panel__fab:hover {
+  background: #f4f7f0;
+}
+
+.help-panel__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: rgba(26, 46, 26, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--overlay-inset, 1.25rem);
+}
+
+.help-panel__dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(28rem, 100%);
+  height: min(32rem, calc(100vh - 2 * var(--overlay-inset, 1.25rem)));
+  overflow: hidden;
+  padding: 1rem 1.1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(26, 46, 26, 0.22);
+  container-type: inline-size;
+}
+
+.help-panel__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+
+.help-panel__body strong {
+  font-weight: 600;
+}
+
+.help-panel__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.help-panel__tab {
+  flex: 1 1 calc(50% - 0.175rem);
+  max-width: calc(50% - 0.175rem);
+  border: 1px solid #d4dcc8;
+  background: rgba(255, 255, 255, 0.55);
+  color: #6b7f6b;
+  padding: 0.42rem 0.35rem;
+  border-radius: 8px;
+  font-size: 0.64rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: normal;
+  text-align: center;
+}
+
+@container (min-width: 20rem) {
+  .help-panel__tab {
+    flex-basis: calc(25% - 0.2625rem);
+    max-width: calc(25% - 0.2625rem);
+  }
+}
+
+.help-panel__tab:hover {
+  background: rgba(255, 255, 255, 0.9);
+  color: #2d4a2d;
+}
+
+.help-panel__tab--active {
+  background: #eef3e8;
+  color: #2d4a2d;
+  border-color: #3d7a3d;
+  box-shadow: inset 0 -2px 0 #3d7a3d;
+  font-weight: 650;
+}
+
+.help-panel__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.help-panel__intro {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: #4a5c4a;
+  font-style: italic;
+}
+
+.help-panel__intro + .help-panel__section {
+  margin-top: -0.85rem;
+}
+
+.help-panel__section h3 {
+  margin: 0 0 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #2d4a2d;
+}
+
+.help-panel__section p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #1a2e1a;
+}
+
+.help-panel__section p + p {
+  margin-top: 0.65rem;
+}
+
+.help-panel__bullets {
+  margin: 0.55rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #1a2e1a;
+}
+
+.help-panel__bullets li {
+  margin-bottom: 0.35rem;
+}
+
+.help-panel__bullets li:last-child {
+  margin-bottom: 0;
+}
+
+.help-panel__figure {
+  margin: 0.55rem auto 0;
+  width: 80%;
+  text-align: center;
+}
+
+.help-panel__figure img,
+.help-panel__season-images img {
+  display: block;
+  width: 100%;
+  margin: 0 auto;
+  border-radius: 4px;
+  border: 1px solid #d4dcc8;
+  background: #f7faf4;
+}
+
+.help-panel__figure figcaption {
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: #6b7f6b;
+  text-align: left;
+}
+
+.help-panel__gallery {
+  display: grid;
+  gap: 0.5rem;
+  width: 80%;
+  margin: 0.55rem auto 0;
+}
+
+.help-panel__gallery--grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  row-gap: 0.2rem;
+  column-gap: 0.35rem;
+}
+
+.help-panel__gallery .help-panel__figure {
+  width: auto;
+  margin: 0;
+}
+
+.help-panel__gallery--grid .help-panel__figure img {
+  border-radius: 4px;
+}
+
+.help-panel__gallery--grid .help-panel__figure figcaption {
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  text-align: left;
+}
+
+.help-panel__figure--crop img {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+.help-panel__season-images {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.help-panel__season-images img {
+  flex: 1 1 0;
+  min-width: 0;
+  object-fit: cover;
+  object-position: center center;
+}
+
+.help-panel__caption-note {
+  margin: 0.55rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: #6b7f6b;
+}
+
+@media (max-width: 520px) {
+  .help-panel__gallery--grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.help-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-shrink: 0;
+}
+
+.help-panel__header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #2d4a2d;
+}
+
+.help-panel__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d4dcc8;
+  background: #eef3e8;
+  color: #2d4a2d;
+  width: 1.625rem;
+  height: 1.625rem;
+  padding: 0;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.help-panel__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #1a2e1a;
+}
+
+.help-panel__list li {
+  margin-bottom: 0.65rem;
+}
+
+.help-panel__list li:last-child {
+  margin-bottom: 0;
+}
+
+.help-panel__list code {
+  font-size: 0.78rem;
+  background: #eef3e8;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+}
+
+.help-panel__links {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.help-panel__links a {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #3d7a3d;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.help-panel__refs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.help-panel__refs li {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #1a2e1a;
+  padding-left: 1.25rem;
+  text-indent: -1.25rem;
+}
+
+.help-panel__refs a {
+  color: #3d7a3d;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.help-panel__refs a:hover {
+  color: #2d4a2d;
+}
+
+.help-panel__links a:hover {
+  color: #2d4a2d;
+}

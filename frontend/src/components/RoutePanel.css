@@ -1,0 +1,129 @@
+.route-panel__tab {
+  flex-shrink: 0;
+  border: 1px solid #d4dcc8;
+  background: rgba(255, 255, 255, 0.96);
+  color: #2d4a2d;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(26, 46, 26, 0.15);
+  backdrop-filter: blur(6px);
+}
+
+.route-panel__tab:hover {
+  background: #f4f7f0;
+}
+
+.route-panel {
+  width: min(16rem, calc(100vw - 2 * var(--overlay-inset) - 3rem));
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 1rem 1.1rem;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(26, 46, 26, 0.18);
+  backdrop-filter: blur(6px);
+}
+
+.route-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.route-panel__header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #2d4a2d;
+}
+
+.route-panel__collapse {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d4dcc8;
+  background: #eef3e8;
+  color: #2d4a2d;
+  width: 1.625rem;
+  height: 1.625rem;
+  padding: 0;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.route-panel__help,
+.route-panel__start,
+.route-panel__summary {
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: #6b7f6b;
+}
+
+.route-panel__start,
+.route-panel__summary {
+  color: #2d4a2d;
+}
+
+.route-panel__pick {
+  width: 100%;
+  margin-bottom: 0.45rem;
+  border: 1px solid #d4dcc8;
+  background: #eef3e8;
+  color: #2d4a2d;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+}
+
+.route-panel__pick--active {
+  border-color: #c9781a;
+  background: #f9f0e6;
+  color: #c9781a;
+}
+
+.route-panel__pick:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.route-panel__actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.route-panel__primary,
+.route-panel__secondary {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.route-panel__primary {
+  border: 1px solid rgba(45, 74, 45, 0.3);
+  background: #3d7a3d;
+  color: #f4f7f0;
+}
+
+.route-panel__primary:disabled,
+.route-panel__secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.route-panel__secondary {
+  border: 1px solid #d4dcc8;
+  background: #eef3e8;
+  color: #2d4a2d;
+}
