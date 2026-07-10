@@ -149,16 +149,22 @@ def validate_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     normalized: list[dict[str, Any]] = []
     seen_keys: set[tuple[int, str]] = set()
     coords_by_id: dict[int, tuple[float, float]] = {}
+    prev_id: int | None = None
 
     for index, raw in enumerate(rows):
         row = {column: raw.get(column) for column in SPREADSHEET_COLUMNS}
 
+        # Extra measurements may omit ID/GPS; inherit from the previous plant row.
         if _is_blank(row["ID"]):
-            raise ValueError(f"Row {index + 1}: ID is required")
-        try:
-            tree_id = int(float(row["ID"]))
-        except (TypeError, ValueError) as exc:
-            raise ValueError(f"Row {index + 1}: ID must be an integer") from exc
+            if prev_id is None:
+                raise ValueError(f"Row {index + 1}: ID is required")
+            tree_id = prev_id
+        else:
+            try:
+                tree_id = int(float(row["ID"]))
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"Row {index + 1}: ID must be an integer") from exc
+            prev_id = tree_id
 
         observed_ym = _normalize_ym(row["Date"], tree_id, index)
         key = (tree_id, observed_ym)
@@ -168,8 +174,20 @@ def validate_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             )
         seen_keys.add(key)
 
-        n_value = _parse_required_number(row["N (41 20')"], "N (41 20')", index)
-        w_value = _parse_required_number(row["W (72 54')"], "W (72 54')", index)
+        if _is_blank(row["N (41 20')"]):
+            if tree_id not in coords_by_id:
+                raise ValueError(f"Row {index + 1}: N (41 20') is required")
+            n_value = coords_by_id[tree_id][0]
+        else:
+            n_value = _parse_required_number(row["N (41 20')"], "N (41 20')", index)
+
+        if _is_blank(row["W (72 54')"]):
+            if tree_id not in coords_by_id:
+                raise ValueError(f"Row {index + 1}: W (72 54') is required")
+            w_value = coords_by_id[tree_id][1]
+        else:
+            w_value = _parse_required_number(row["W (72 54')"], "W (72 54')", index)
+
         if tree_id in coords_by_id:
             prev_n, prev_w = coords_by_id[tree_id]
             if abs(prev_n - n_value) > 1e-6 or abs(prev_w - w_value) > 1e-6:

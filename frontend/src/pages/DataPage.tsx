@@ -373,13 +373,35 @@ function sortPlantGroups(
   });
 }
 
+function isBlankCell(value: CellValue): boolean {
+  return value === null || value === undefined || String(value).trim() === "";
+}
+
 function groupRowsByPlant(rows: RowData[]): PlantGroup[] {
   const groups = new Map<string, PlantGroup>();
   const order: string[] = [];
+  let lastPlantKey: string | null = null;
 
   rows.forEach((row, index) => {
     const plantId = parsePlantId(row.ID);
+
+    // Blank ID = extra measurement under the most recent plant.
+    if (plantId === null && lastPlantKey && groups.has(lastPlantKey)) {
+      const existing = groups.get(lastPlantKey)!;
+      if (existing.plantId !== null) {
+        existing.rows.push({ row, index });
+        if (existing.nCoord == null && row["N (41 20')"] != null) {
+          existing.nCoord = row["N (41 20')"];
+        }
+        if (existing.wCoord == null && row["W (72 54')"] != null) {
+          existing.wCoord = row["W (72 54')"];
+        }
+        return;
+      }
+    }
+
     const key = plantId === null ? `unset-${index}` : String(plantId);
+    lastPlantKey = key;
     const existing = groups.get(key);
     if (!existing) {
       groups.set(key, {
@@ -402,6 +424,37 @@ function groupRowsByPlant(rows: RowData[]): PlantGroup[] {
   });
 
   return order.map((key) => groups.get(key)!);
+}
+
+/** Fill inherited plant ID/GPS onto every measurement row before save. */
+function rowsWithInheritedPlantFields(rows: RowData[]): RowData[] {
+  const groups = groupRowsByPlant(rows);
+  const fillByIndex = new Map<
+    number,
+    { id: CellValue; n: CellValue; w: CellValue }
+  >();
+
+  for (const group of groups) {
+    const id = group.plantId ?? group.rows[0]?.row.ID ?? null;
+    const n = group.nCoord ?? group.rows[0]?.row["N (41 20')"] ?? null;
+    const w = group.wCoord ?? group.rows[0]?.row["W (72 54')"] ?? null;
+    for (const { index } of group.rows) {
+      fillByIndex.set(index, { id, n, w });
+    }
+  }
+
+  return rows.map((row, index) => {
+    const fill = fillByIndex.get(index);
+    if (!fill) {
+      return row;
+    }
+    return {
+      ...row,
+      ID: isBlankCell(row.ID) ? fill.id : row.ID,
+      "N (41 20')": isBlankCell(row["N (41 20')"]) ? fill.n : row["N (41 20')"],
+      "W (72 54')": isBlankCell(row["W (72 54')"]) ? fill.w : row["W (72 54')"],
+    };
+  });
 }
 
 function rowMatchesSearch(
@@ -631,19 +684,22 @@ export default function DataPage() {
     value: string,
   ) => {
     const nextValue = inputToCell(value);
-    setRows((current) =>
-      current.map((row, index) => {
-        const rowPlantId = parsePlantId(row.ID);
-        const matches =
-          plantId !== null
-            ? rowPlantId === plantId
-            : groupKey === `unset-${index}`;
-        if (!matches) {
-          return row;
-        }
-        return { ...row, [column]: nextValue };
-      }),
-    );
+    setRows((current) => {
+      const group =
+        groupRowsByPlant(current).find((entry) => entry.key === groupKey) ??
+        groupRowsByPlant(current).find((entry) => entry.plantId === plantId);
+      if (!group) {
+        return current;
+      }
+      // Plant identity lives on the first row; extra measurements inherit on save.
+      const headIndex = group.rows[0]?.index;
+      if (headIndex === undefined) {
+        return current;
+      }
+      return current.map((row, index) =>
+        index === headIndex ? { ...row, [column]: nextValue } : row,
+      );
+    });
   };
 
   const addPlant = () => {
@@ -672,12 +728,11 @@ export default function DataPage() {
   };
 
   const addMeasurement = (group: PlantGroup) => {
-    const template = group.rows[0]?.row;
     const blank: RowData = {
-      ID: group.plantId,
+      ID: null,
       Date: currentYm(),
-      "N (41 20')": group.nCoord ?? template?.["N (41 20')"] ?? null,
-      "W (72 54')": group.wCoord ?? template?.["W (72 54')"] ?? null,
+      "N (41 20')": null,
+      "W (72 54')": null,
       "Stem #": null,
       "Dbase (cm)": null,
       "DBH (cm)": null,
@@ -685,7 +740,20 @@ export default function DataPage() {
       Sex: null,
       Notes: null,
     };
-    setRows((current) => [...current, blank]);
+    setRows((current) => {
+      const latest = groupRowsByPlant(current).find(
+        (entry) => entry.key === group.key,
+      );
+      const lastIndex =
+        latest?.rows[latest.rows.length - 1]?.index ??
+        group.rows[group.rows.length - 1]?.index;
+      if (lastIndex === undefined) {
+        return [...current, blank];
+      }
+      const next = [...current];
+      next.splice(lastIndex + 1, 0, blank);
+      return next;
+    });
   };
 
   const removeRow = (rowIndex: number) => {
@@ -729,8 +797,10 @@ export default function DataPage() {
     setSaving(true);
     setError(null);
     try {
-      await saveSpreadsheet({ columns, rows });
-      setBaseline({ columns, rows: cloneRows(rows) });
+      const payloadRows = rowsWithInheritedPlantFields(rows);
+      await saveSpreadsheet({ columns, rows: payloadRows });
+      setRows(cloneRows(payloadRows));
+      setBaseline({ columns, rows: cloneRows(payloadRows) });
       notifyDataUpdated();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");
