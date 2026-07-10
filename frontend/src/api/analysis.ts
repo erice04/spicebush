@@ -1,19 +1,56 @@
+import bundledAnalysis from "../data/analysis.json";
 import type { AnalysisResponse } from "../types/analysis";
 
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+
+export function getBundledAnalysis(): AnalysisResponse {
+  return bundledAnalysis as AnalysisResponse;
+}
+
+function isCompleteAnalysis(payload: unknown): payload is AnalysisResponse {
+  if (!payload || typeof payload !== "object") {
+    return false;
+  }
+
+  const analysis = payload as AnalysisResponse;
+  return Boolean(
+    analysis.pca?.points &&
+      analysis.pca?.loadings &&
+      analysis.pca?.correlation?.matrix &&
+      analysis.classification,
+  );
+}
+
 export async function getAnalysis(): Promise<AnalysisResponse> {
+  const bundled = getBundledAnalysis();
+
   try {
-    const apiResponse = await fetch("/api/analysis");
+    const apiResponse = await fetch(`${API_BASE}/api/analysis`, {
+      cache: "no-store",
+    });
     if (apiResponse.ok) {
-      return apiResponse.json() as Promise<AnalysisResponse>;
+      const payload: unknown = await apiResponse.json();
+      if (isCompleteAnalysis(payload)) {
+        return payload;
+      }
     }
   } catch {
-    // Backend unavailable; fall back to static analysis file.
+    // Fall through.
   }
 
-  const staticResponse = await fetch("/data/analysis.json");
-  if (!staticResponse.ok) {
-    throw new Error(`Failed to load analysis (${staticResponse.status})`);
+  try {
+    const staticResponse = await fetch("/data/analysis.json", {
+      cache: "no-store",
+    });
+    if (staticResponse.ok) {
+      const payload: unknown = await staticResponse.json();
+      if (isCompleteAnalysis(payload)) {
+        return payload;
+      }
+    }
+  } catch {
+    // Fall through.
   }
 
-  return staticResponse.json() as Promise<AnalysisResponse>;
+  return bundled;
 }

@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useCloseAnimation } from "../hooks/useCloseAnimation";
 import "./HelpPanel.css";
 
 interface HelpPanelProps {
   open: boolean;
   showFab?: boolean;
+  individualCount?: number;
   onOpen: () => void;
   onClose: () => void;
 }
@@ -30,10 +32,14 @@ const SPICEBUSH_IMAGES = {
 export default function HelpPanel({
   open,
   showFab = true,
+  individualCount,
   onClose,
   onOpen,
 }: HelpPanelProps) {
   const [activeTab, setActiveTab] = useState<HelpTab>("map");
+  const { closing, beginClose } = useCloseAnimation();
+
+  const handleClose = () => beginClose(onClose);
 
   if (!open) {
     if (!showFab) {
@@ -54,12 +60,12 @@ export default function HelpPanel({
 
   return (
     <div
-      className="help-panel__backdrop"
-      onClick={onClose}
+      className={`help-panel__backdrop${closing ? " help-panel__backdrop--closing" : ""}`}
+      onClick={handleClose}
       role="presentation"
     >
       <div
-        className="help-panel__dialog"
+        className={`help-panel__dialog${closing ? " help-panel__dialog--closing" : ""}`}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-labelledby="introduction-title"
@@ -69,7 +75,7 @@ export default function HelpPanel({
           <button
             type="button"
             className="help-panel__close"
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Close introduction"
           >
             ×
@@ -94,6 +100,7 @@ export default function HelpPanel({
         </div>
 
         <div className="help-panel__body">
+          <div key={activeTab} className="help-panel__pane">
           {activeTab === "map" && (
             <ul
               id="help-panel-map"
@@ -101,6 +108,10 @@ export default function HelpPanel({
               role="tabpanel"
               aria-labelledby="help-tab-map"
             >
+              <li>
+                <strong>Map</strong>: Hover for ID, click for details. Double-click to
+                exclude or re-include (excluded points are greyed out).
+              </li>
               <li>
                 <strong>Filters</strong>: Checkboxes and sliders narrow which
                 individuals count toward results. All active filters combine together.
@@ -111,9 +122,17 @@ export default function HelpPanel({
                 individuals inside the shape are kept.
               </li>
               <li>
-                <strong>Map</strong>: Hover for ID. Single-click for measurements.
-                Double-click to exclude or re-include (excluded points stay visible but
-                greyed out).
+                <strong>Route</strong>: Builds a walking path through the
+                individuals currently shown on the map. Set a start point, then
+                generate. Needs at least two visible points.
+              </li>
+              <li>
+                <strong>Analysis</strong>: Opens a chart of all individuals by trunk
+                size and stem count. Hover or click a point to highlight it on the map.
+              </li>
+              <li>
+                <strong>Data</strong>: Add or edit plant IDs, GPS, and dated
+                measurements, then Save to update the map and analysis.
               </li>
               <li>
                 <strong>Saved filters</strong>: Save your current checkbox, slider, and
@@ -331,9 +350,9 @@ export default function HelpPanel({
               <section className="help-panel__section">
                 <h3>Survey data</h3>
                 <p>
-                  The 74 individuals mapped here were recorded at East Rock Park, New
-                  Haven, CT, as a subset of a larger census of 180+ spicebush conducted
-                  by the Yale School of the Environment.
+                  The {individualCount ?? "—"} individuals mapped here were recorded at
+                  East Rock Park, New Haven, CT, as a subset of a larger census of 180+
+                  spicebush conducted by the Yale School of the Environment.
                 </p>
               </section>
               <section className="help-panel__section">
@@ -410,6 +429,7 @@ export default function HelpPanel({
               </section>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>

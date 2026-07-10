@@ -15,6 +15,7 @@ from analysis import compute_analysis  # noqa: E402
 OUTPUT_PATHS = [
     ROOT / "data" / "analysis.json",
     ROOT / "frontend" / "public" / "data" / "analysis.json",
+    ROOT / "frontend" / "src" / "data" / "analysis.json",
 ]
 
 

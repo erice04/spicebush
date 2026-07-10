@@ -1,57 +1,330 @@
 .pca-biplot {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.75rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.pca-biplot__chart {
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  flex: 0 0 auto;
+  min-height: 0;
+  touch-action: none;
+  cursor: grab;
+  position: relative;
+  z-index: 1;
+}
+
+.pca-biplot__zoom-surface {
+  cursor: inherit;
+}
+
+.pca-biplot__chart--active {
+  cursor: grabbing;
+}
+
+.pca-biplot__point-card {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  z-index: 2;
+  width: min(11.5rem, calc(100% - 1.1rem));
+  padding: 0.55rem 0.6rem 0.6rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #d4dcc8;
+  box-shadow: 0 6px 20px rgba(26, 46, 26, 0.16);
+  color: #2d4a2d;
+  pointer-events: auto;
+}
+
+.pca-biplot__point-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin-bottom: 0.4rem;
+}
+
+.pca-biplot__point-card-header strong {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.pca-biplot__point-card-close {
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  color: #6b7f6b;
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 1rem;
+  height: 1rem;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+}
+
+.pca-biplot__point-card-close:hover {
+  color: #2d4a2d;
+}
+
+.pca-biplot__point-card-metrics {
+  margin: 0;
+  display: grid;
+  gap: 0.22rem;
+}
+
+.pca-biplot__point-card-metrics > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+  align-items: baseline;
+}
+
+.pca-biplot__point-card-metrics dt {
+  margin: 0;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #6b7f6b;
+}
+
+.pca-biplot__point-card-metrics dd {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #2d4a2d;
+  text-align: right;
 }
 
 .pca-biplot__svg {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
 }
 
+.pca-biplot__title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  fill: #2d4a2d;
+}
+
 .pca-biplot__axis-label {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   fill: #4a5f4a;
 }
 
-.pca-biplot__arrow {
-  stroke: #6b7f5e;
-  stroke-width: 1.5;
-  marker-end: url(#pca-arrowhead);
-}
-
-.pca-biplot__arrow-label {
-  font-size: 0.68rem;
-  fill: #3d523d;
-  font-weight: 600;
-}
-
-.pca-biplot__points circle {
-  transition: r 0.12s ease, stroke-width 0.12s ease;
+.pca-biplot__points circle,
+.pca-biplot__points text {
+  transition: stroke-width 0.12s ease, fill 0.12s ease;
 }
 
 .pca-biplot__legend {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem 0.85rem;
-  font-size: 0.72rem;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.65rem;
   color: #4a5f4a;
 }
 
+.pca-biplot__legend-grid {
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  gap: 0.4rem 1rem;
+  justify-content: center;
+}
+
+.pca-biplot:not(.pca-biplot--popup) {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  /* Scales with plot box width; ~1 at 22rem+, down toward 0.72 when narrow */
+  --pca-legend-scale: clamp(0.72, calc(100cqi / 22rem), 1);
+}
+
+/* Full-page: size to content by default (two-column brief overrides fill) */
+.analysis-page__scroll--brief .pca-biplot:not(.pca-biplot--popup),
+.analysis-page__scroll--technical .pca-biplot:not(.pca-biplot--popup) {
+  flex: 0 0 auto;
+  height: auto;
+  min-height: 0;
+}
+
+.pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+  font-size: calc(0.65rem * var(--pca-legend-scale));
+  gap: calc(0.35rem * var(--pca-legend-scale));
+}
+
+.pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-grid {
+  gap: calc(0.35rem * var(--pca-legend-scale)) calc(1.1rem * var(--pca-legend-scale));
+  justify-content: start;
+}
+
+.pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-item {
+  grid-template-columns: calc(0.75rem * var(--pca-legend-scale)) max-content;
+  column-gap: calc(0.35rem * var(--pca-legend-scale));
+}
+
+.pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-symbol {
+  width: calc(0.75rem * var(--pca-legend-scale));
+  height: calc(0.75rem * var(--pca-legend-scale));
+}
+
+.pca-biplot:not(.pca-biplot--popup) .pca-biplot__swatch {
+  width: calc(0.58rem * var(--pca-legend-scale));
+  height: calc(0.58rem * var(--pca-legend-scale));
+}
+
+.pca-biplot:not(.pca-biplot--popup) .pca-biplot__marker {
+  width: calc(0.7rem * var(--pca-legend-scale));
+  height: calc(0.7rem * var(--pca-legend-scale));
+  font-size: calc(0.95rem * var(--pca-legend-scale));
+}
+
+.pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-hint {
+  margin-top: auto;
+  padding-top: clamp(0.5rem, 2.2vh, 1.15rem);
+  text-align: center;
+  font-size: calc(0.58rem * var(--pca-legend-scale));
+  flex-shrink: 0;
+}
+
 .pca-biplot__legend-item {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 0.75rem max-content;
   align-items: center;
-  gap: 0.35rem;
+  column-gap: 0.35rem;
+}
+
+.pca-biplot__legend-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.75rem;
+  height: 0.75rem;
+  flex-shrink: 0;
+}
+
+.pca-biplot__legend-label {
+  white-space: nowrap;
 }
 
 .pca-biplot__swatch {
-  width: 0.7rem;
-  height: 0.7rem;
+  width: 0.58rem;
+  height: 0.58rem;
   border-radius: 999px;
   border: 1px solid rgba(45, 74, 45, 0.2);
 }
 
-.pca-biplot__swatch--gradient {
-  background: linear-gradient(90deg, #4a6fa5, #c45c8a);
+.pca-biplot__marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.7rem;
+  height: 0.7rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+  -webkit-text-stroke: 0.35px currentColor;
+  paint-order: stroke fill;
+}
+
+.pca-biplot__legend-hint {
+  margin: 0;
+  font-size: 0.58rem;
+  font-style: italic;
+  color: #6b7f6b;
+  line-height: 1.3;
+}
+
+.pca-biplot--popup {
+  --pca-ui-scale: 1;
+  gap: calc(0.2rem * var(--pca-ui-scale));
+}
+
+.pca-biplot--popup .pca-biplot__chart {
+  width: 76%;
+  margin-inline: auto;
+  aspect-ratio: 5 / 4;
+}
+
+.pca-biplot--popup .pca-biplot__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: calc(0.15rem * var(--pca-ui-scale));
+  width: 100%;
+}
+
+.pca-biplot--popup .pca-biplot__heading {
+  margin: 0;
+  font-size: calc(0.88rem * var(--pca-ui-scale));
+  font-weight: 600;
+  color: #2d4a2d;
+}
+
+.pca-biplot--popup .pca-biplot__legend {
+  align-items: center;
+  width: 100%;
+  font-size: calc(0.65rem * var(--pca-ui-scale));
+  gap: calc(0.15rem * var(--pca-ui-scale));
+  margin-top: calc(0.1rem * var(--pca-ui-scale));
+}
+
+.pca-biplot--popup .pca-biplot__legend-item--spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.pca-biplot--popup .pca-biplot__legend-grid {
+  width: fit-content;
+  margin: 0 auto;
+  gap: calc(0.25rem * var(--pca-ui-scale)) calc(0.75rem * var(--pca-ui-scale));
+}
+
+.pca-biplot--popup .pca-biplot__legend-item {
+  grid-template-columns: calc(0.75rem * var(--pca-ui-scale)) max-content;
+  column-gap: calc(0.35rem * var(--pca-ui-scale));
+}
+
+.pca-biplot--popup .pca-biplot__legend-symbol {
+  width: calc(0.75rem * var(--pca-ui-scale));
+  height: calc(0.75rem * var(--pca-ui-scale));
+}
+
+.pca-biplot--popup .pca-biplot__swatch {
+  width: calc(0.58rem * var(--pca-ui-scale));
+  height: calc(0.58rem * var(--pca-ui-scale));
+}
+
+.pca-biplot--popup .pca-biplot__marker {
+  width: calc(0.7rem * var(--pca-ui-scale));
+  height: calc(0.7rem * var(--pca-ui-scale));
+  font-size: calc(0.95rem * var(--pca-ui-scale));
+}
+
+.pca-biplot--popup .pca-biplot__legend-hint {
+  text-align: center;
+  width: 100%;
+  font-size: calc(0.58rem * var(--pca-ui-scale));
+}
+
+.pca-biplot--popup .pca-biplot__axis-label {
+  font-size: calc(0.78rem * var(--pca-ui-scale));
+}
+
+.pca-biplot--popup .pca-biplot__axis-x text,
+.pca-biplot--popup .pca-biplot__axis-y text {
+  font-size: calc(0.72rem * var(--pca-ui-scale));
 }

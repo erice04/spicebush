@@ -286,6 +286,150 @@ export function buildRouteGeoJSON(
   };
 }
 
+/** Empty route collections for clearing the map layers. */
+export const EMPTY_ROUTE_LINE: GeoJSON.FeatureCollection<GeoJSON.LineString> = {
+  type: "FeatureCollection",
+  features: [],
+};
+
+export const EMPTY_ROUTE_STOPS: GeoJSON.FeatureCollection<GeoJSON.Point> = {
+  type: "FeatureCollection",
+  features: [],
+};
+
+function lineSegmentLengths(coordinates: [number, number][]): number[] {
+  const lengths: number[] = [];
+  for (let i = 0; i < coordinates.length - 1; i += 1) {
+    lengths.push(haversineDistanceM(coordinates[i], coordinates[i + 1]));
+  }
+  return lengths;
+}
+
+/** Fraction of total path length (0–1) at each vertex. */
+export function routeVertexProgress(
+  coordinates: [number, number][],
+): number[] {
+  if (coordinates.length === 0) {
+    return [];
+  }
+  if (coordinates.length === 1) {
+    return [0];
+  }
+
+  const lengths = lineSegmentLengths(coordinates);
+  const total = lengths.reduce((sum, length) => sum + length, 0);
+  if (total <= 0) {
+    return coordinates.map((_, index) =>
+      index / Math.max(1, coordinates.length - 1),
+    );
+  }
+
+  const progress = [0];
+  let traveled = 0;
+  for (const length of lengths) {
+    traveled += length;
+    progress.push(traveled / total);
+  }
+  return progress;
+}
+
+/** Partial LineString from the start through `progress` (0–1) along the path. */
+export function sliceLineByProgress(
+  coordinates: [number, number][],
+  progress: number,
+): [number, number][] {
+  if (coordinates.length === 0) {
+    return [];
+  }
+  if (coordinates.length === 1 || progress <= 0) {
+    return [coordinates[0]];
+  }
+  if (progress >= 1) {
+    return coordinates.slice();
+  }
+
+  const lengths = lineSegmentLengths(coordinates);
+  const total = lengths.reduce((sum, length) => sum + length, 0);
+  if (total <= 0) {
+    return [coordinates[0]];
+  }
+
+  const target = progress * total;
+  const sliced: [number, number][] = [coordinates[0]];
+  let traveled = 0;
+
+  for (let i = 0; i < lengths.length; i += 1) {
+    const segment = lengths[i];
+    if (traveled + segment >= target) {
+      const t = segment > 0 ? (target - traveled) / segment : 1;
+      const [lng0, lat0] = coordinates[i];
+      const [lng1, lat1] = coordinates[i + 1];
+      sliced.push([lng0 + (lng1 - lng0) * t, lat0 + (lat1 - lat0) * t]);
+      return sliced;
+    }
+    traveled += segment;
+    sliced.push(coordinates[i + 1]);
+  }
+
+  return coordinates.slice();
+}
+
+export function buildPartialRouteGeoJSON(
+  fullLine: GeoJSON.FeatureCollection<GeoJSON.LineString>,
+  fullStops: GeoJSON.FeatureCollection<GeoJSON.Point>,
+  progress: number,
+): {
+  line: GeoJSON.FeatureCollection<GeoJSON.LineString>;
+  stops: GeoJSON.FeatureCollection<GeoJSON.Point>;
+} {
+  const fullCoords =
+    (fullLine.features[0]?.geometry.coordinates as
+      | [number, number][]
+      | undefined) ?? [];
+
+  if (fullCoords.length < 2) {
+    return {
+      line: EMPTY_ROUTE_LINE,
+      stops:
+        progress > 0
+          ? fullStops
+          : EMPTY_ROUTE_STOPS,
+    };
+  }
+
+  const clamped = Math.min(1, Math.max(0, progress));
+  const sliced = sliceLineByProgress(fullCoords, clamped);
+  const vertexProgress = routeVertexProgress(fullCoords);
+
+  return {
+    line: {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "LineString",
+            coordinates: sliced,
+          },
+        },
+      ],
+    },
+    stops: {
+      type: "FeatureCollection",
+      features: fullStops.features.filter((_, index) => {
+        const atVertex = vertexProgress[index] ?? 1;
+        return atVertex <= clamped + 1e-6;
+      }),
+    },
+  };
+}
+
+export function routeTraceDurationMs(stopCount: number): number {
+  const segments = Math.max(1, stopCount - 1);
+  return Math.min(4200, Math.max(900, 700 + segments * 160));
+}
+
 export function routeMatchesVisibleSet(
   route: ComputedRoute | null,
   visibleIds: number[],

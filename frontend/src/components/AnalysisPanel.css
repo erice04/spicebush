@@ -9,6 +9,10 @@
   font-weight: 600;
   box-shadow: 0 4px 16px rgba(26, 46, 26, 0.15);
   backdrop-filter: blur(6px);
+  transition:
+    background 0.18s ease,
+    transform 0.15s ease,
+    box-shadow 0.18s ease;
 }
 
 .analysis-panel__tab:hover,
@@ -16,68 +20,959 @@
   background: #f4f7f0;
 }
 
-.analysis-panel {
-  width: min(24rem, calc(100vw - 2 * var(--overlay-inset) - 3rem));
-  max-height: calc(100vh - 8rem);
-  overflow-y: auto;
-  padding: 1rem 1.1rem;
-  background: rgba(255, 255, 255, 0.96);
-  border-radius: 12px;
-  box-shadow: 0 8px 28px rgba(26, 46, 26, 0.18);
-  backdrop-filter: blur(6px);
+.analysis-panel__tab:active {
+  transform: scale(0.97);
 }
 
-.analysis-panel__header {
+.analysis-popup {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  width: min(20rem, calc(100vw - 2 * var(--overlay-inset, 1.25rem) - 3rem));
+  max-height: calc(100dvh - 4.75rem - 2 * var(--overlay-inset, 1.25rem));
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(26, 46, 26, 0.22);
+  overflow: hidden;
+  box-sizing: border-box;
+  animation: ui-rise-in 0.22s ease;
+}
+
+.analysis-popup--dormant {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.analysis-popup--no-enter,
+.analysis-popup--dormant {
+  animation: none;
+}
+
+.analysis-popup--closing {
+  animation: ui-rise-out 0.18s ease forwards;
+  pointer-events: none;
+}
+
+.analysis-popup__close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  z-index: 1;
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #d4dcc8;
+  background: #eef3e8;
+  color: #2d4a2d;
+  width: 1.4rem;
+  height: 1.4rem;
+  aspect-ratio: 1;
+  padding: 0;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.analysis-popup__close:hover {
+  background: #e4ebdc;
+  border-color: #b7c6b0;
+  color: #1a2e1a;
+}
+
+.analysis-popup .analysis-page__plot {
+  flex: 0 0 auto;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0.35rem 0.5rem 0.15rem;
+}
+
+.analysis-popup .pca-biplot {
+  flex: 0 0 auto;
+}
+
+.analysis-popup__more {
+  flex-shrink: 0;
+  border: none;
+  border-top: 1px solid #d4dcc8;
+  background: #eef3e8;
+  color: #2d4a2d;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.analysis-popup__more:hover {
+  background: #e4ebdc;
+  border-color: #b7c6b0;
+  color: #1a2e1a;
+}
+
+.analysis-page {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: #f4f7f0;
+  overflow: hidden;
+}
+
+.analysis-page--opening {
+  animation: ui-scale-in 0.22s ease;
+}
+
+.analysis-page--closing {
+  animation: ui-scale-out 0.2s ease forwards;
+  pointer-events: none;
+}
+
+.analysis-page--minimizing {
+  animation: ui-minimize-out 0.22s ease forwards;
+  pointer-events: none;
+  transform-origin: top left;
+}
+
+.analysis-page__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  gap: 1rem;
+  flex-shrink: 0;
+  padding: 0.85rem 0.7rem 0.85rem var(--overlay-inset, 1.25rem);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 55%),
+    linear-gradient(90deg, #243d24 0%, #2d4a2d 45%, #355635 100%);
+  color: #f4f7f0;
+  container-type: inline-size;
+  container-name: analysis-header;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 6px 18px rgba(20, 36, 20, 0.28);
+  z-index: 2;
 }
 
-.analysis-panel__header h2 {
+.analysis-page__header h2 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.analysis-page__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.35rem;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.analysis-page__window-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.analysis-page__depth {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.analysis-page__depth-pill {
+  position: absolute;
+  top: 0.15rem;
+  bottom: 0.15rem;
+  left: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 1px 4px rgba(20, 36, 20, 0.18);
+  pointer-events: none;
+  z-index: 0;
+  transition:
+    transform 0.28s ease,
+    width 0.28s ease;
+}
+
+.analysis-page__depth-btn {
+  position: relative;
+  z-index: 1;
+  border: none;
+  background: transparent;
+  color: rgba(244, 247, 240, 0.78);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    transform 0.15s ease;
+}
+
+.analysis-page__depth-btn--active {
+  color: #f4f7f0;
+}
+
+.analysis-page__depth-btn:hover:not(.analysis-page__depth-btn--active) {
+  color: #f4f7f0;
+}
+
+.analysis-page__depth-btn:active {
+  transform: scale(0.97);
+}
+
+.analysis-page__minimize,
+.analysis-page__close {
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: #f4f7f0;
+  line-height: 1;
+  cursor: pointer;
+  width: 1.55rem;
+  height: 1.55rem;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  padding: 0;
+}
+
+.analysis-page__minimize {
+  font-size: 1.1rem;
+}
+
+.analysis-page__close {
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+
+.analysis-page__minimize:hover,
+.analysis-page__close:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+@container analysis-header (max-width: 28rem) {
+  .analysis-page__title-full {
+    display: none;
+  }
+
+  .analysis-page__header-actions {
+    gap: 0.75rem;
+  }
+
+  .analysis-page__depth {
+    padding: 0.1rem;
+  }
+
+  .analysis-page__depth-btn {
+    font-size: 0.68rem;
+    padding: 0.32rem 0.5rem;
+  }
+
+  .analysis-page__minimize,
+  .analysis-page__close {
+    width: 1.35rem;
+    height: 1.35rem;
+    aspect-ratio: 1;
+    line-height: 1;
+  }
+
+  .analysis-page__minimize {
+    font-size: 1rem;
+  }
+
+  .analysis-page__close {
+    font-size: 1rem;
+  }
+}
+
+.analysis-page__main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/*
+ * Chromium / Edge / WebKit: scrollbar track uses the right overlay inset, so
+ * content padding-right stays 0 and left/right page gaps match.
+ */
+@supports (-webkit-appearance: none) {
+  .analysis-page__main {
+    padding-right: 0;
+    overflow-y: scroll;
+  }
+
+  .analysis-page__main::-webkit-scrollbar {
+    width: var(--overlay-inset, 1.25rem);
+  }
+
+  .analysis-page__main::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .analysis-page__main::-webkit-scrollbar-thumb {
+    background-color: rgba(45, 74, 45, 0.28);
+    border-radius: 999px;
+    border: 0.35rem solid transparent;
+    background-clip: padding-box;
+  }
+
+  .analysis-page__main::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(45, 74, 45, 0.42);
+  }
+
+  .analysis-page__scroll {
+    padding-right: 0;
+  }
+}
+
+.analysis-page__scroll {
+  flex: 0 0 auto;
+  min-height: min-content;
+  padding: 0.4rem var(--overlay-inset, 1.25rem) 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.analysis-page__scroll.ui-rise-in {
+  animation: ui-rise-in 0.22s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analysis-page__depth-pill {
+    transition: none;
+  }
+}
+
+.analysis-page__scroll--brief,
+.analysis-page__scroll--technical {
+  gap: 0.55rem;
+  overflow: visible;
+}
+
+/* Brief fills the viewport when content is short, so boxes can stretch to the bottom. */
+.analysis-page__scroll--brief {
+  flex: 1 0 auto;
+  min-height: 100%;
+}
+
+.analysis-page__body {
+  flex: 0 0 auto;
+  min-height: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-content: start;
+  overflow: visible;
+}
+
+.analysis-page__scroll--brief .analysis-page__body,
+.analysis-page__scroll--technical .analysis-page__body {
+  flex: 0 0 auto;
+  gap: 0.55rem;
+  align-items: stretch;
+  align-content: start;
+  overflow: visible;
+}
+
+.analysis-page__scroll--brief .analysis-page__body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@media (min-width: 42rem) {
+  .analysis-page__body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.analysis-page__chart-col,
+.analysis-page__details {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.analysis-page__scroll--brief .analysis-page__chart-col,
+.analysis-page__scroll--brief .analysis-page__details,
+.analysis-page__scroll--technical .analysis-page__chart-col,
+.analysis-page__scroll--technical .analysis-page__details {
+  gap: 0.55rem;
+  height: auto;
+  align-self: stretch;
+  overflow: visible;
+}
+
+.analysis-page__scroll--brief .analysis-page__details > .analysis-page__card,
+.analysis-page__scroll--technical .analysis-page__details > .analysis-page__card,
+.analysis-page__scroll--brief .analysis-page__chart-col > .analysis-page__card,
+.analysis-page__scroll--technical .analysis-page__chart-col > .analysis-page__card,
+.analysis-page__scroll--brief .analysis-page__plot,
+.analysis-page__scroll--technical .analysis-page__plot,
+.analysis-page__scroll .analysis-page__strip {
+  box-shadow: 0 1px 4px rgba(26, 46, 26, 0.06);
+}
+
+.analysis-page__chart-col {
+  position: static;
+  align-self: stretch;
+}
+
+.analysis-page__scroll--brief .analysis-page__chart-col,
+.analysis-page__scroll--technical .analysis-page__chart-col {
+  position: static;
+  align-self: stretch;
+}
+
+.analysis-page__chart-col .analysis-page__plot {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  min-height: 0;
+}
+
+.analysis-page__scroll--brief .analysis-page__plot,
+.analysis-page__scroll--technical .analysis-page__plot {
+  flex: 0 0 auto;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  box-sizing: border-box;
+  padding: 0.7rem 0.85rem 0.55rem;
+  overflow: visible;
+}
+
+.analysis-page__chart-col .pca-biplot {
+  flex: 1;
+  min-height: 0;
+}
+
+.analysis-page__scroll--brief .analysis-page__plot > .pca-biplot,
+.analysis-page__scroll--brief .analysis-page__chart-col .pca-biplot,
+.analysis-page__scroll--brief .pca-biplot:not(.pca-biplot--popup),
+.analysis-page__scroll--technical .analysis-page__plot > .pca-biplot,
+.analysis-page__scroll--technical .analysis-page__chart-col .pca-biplot,
+.analysis-page__scroll--technical .pca-biplot:not(.pca-biplot--popup) {
+  flex: 0 0 auto;
+  height: auto;
+  max-height: none;
+  width: 100%;
+  min-height: 0;
+  gap: 0.35rem;
+}
+
+.analysis-page__scroll--brief .analysis-page__body .analysis-page__plot .pca-biplot__chart,
+.analysis-page__scroll--brief .pca-biplot:not(.pca-biplot--popup) .pca-biplot__chart,
+.analysis-page__scroll--technical .analysis-page__body .analysis-page__plot .pca-biplot__chart,
+.analysis-page__scroll--technical .pca-biplot:not(.pca-biplot--popup) .pca-biplot__chart {
+  aspect-ratio: 5 / 4;
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 0;
+  max-height: none;
+}
+
+.analysis-page__scroll--brief .pca-biplot__legend,
+.analysis-page__scroll--technical .pca-biplot__legend {
+  margin-top: 0.15rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.analysis-page__scroll--brief .pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-grid,
+.analysis-page__scroll--technical .pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-grid {
+  justify-content: center;
+}
+
+.analysis-page__scroll--brief .pca-biplot__legend-hint,
+.analysis-page__scroll--brief .pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-hint,
+.analysis-page__scroll--technical .pca-biplot__legend-hint,
+.analysis-page__scroll--technical .pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-hint {
+  margin-top: 0.45rem;
+  padding-top: 0.35rem;
+  text-align: center;
+}
+
+.analysis-page__scroll--brief .analysis-page__card,
+.analysis-page__scroll--technical .analysis-page__card {
+  flex: 0 0 auto;
+  height: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-content: flex-start;
+  box-sizing: border-box;
+  padding: 1.05rem 1.15rem;
+  overflow: visible;
+}
+
+.analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:first-child {
+  padding: 0.75rem 0.95rem;
+}
+
+.analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:first-child,
+.analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:last-child {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+/* Two-column brief: fill leftover page height; 55/45 key findings / classification */
+@media (min-width: 42rem) {
+  .analysis-page__scroll--brief .analysis-page__body {
+    align-items: stretch;
+    align-content: stretch;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: visible;
+  }
+
+  .analysis-page__scroll--brief .analysis-page__details,
+  .analysis-page__scroll--brief .analysis-page__chart-col {
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    overflow: hidden;
+  }
+
+  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:first-child {
+    flex: 55 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: clamp(0.75rem, 1.6vh, 1.35rem) 0.95rem clamp(0.55rem, 1.2vh, 1rem);
+  }
+
+  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:last-child {
+    flex: 45 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: clamp(0.85rem, 1.6vh, 1.35rem) 1.15rem clamp(0.55rem, 1.2vh, 1rem);
+  }
+
+  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:first-child .analysis-page__tech-list,
+  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:last-child .analysis-page__card-lead,
+  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:last-child .analysis-panel__matrix {
+    flex-shrink: 0;
+  }
+
+  .analysis-page__scroll--brief .analysis-page__plot {
+    flex: 1 1 0;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(0.7rem, 1.5vh, 1.25rem) 0.85rem clamp(0.45rem, 1.1vh, 0.9rem);
+  }
+
+  .analysis-page__scroll--brief .analysis-page__plot > .pca-biplot,
+  .analysis-page__scroll--brief .analysis-page__chart-col .pca-biplot,
+  .analysis-page__scroll--brief .pca-biplot:not(.pca-biplot--popup) {
+    flex: 1 1 0;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .analysis-page__scroll--brief .analysis-page__body .analysis-page__plot .pca-biplot__chart,
+  .analysis-page__scroll--brief .pca-biplot:not(.pca-biplot--popup) .pca-biplot__chart {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    aspect-ratio: auto;
+  }
+
+  .analysis-page__scroll--brief .pca-biplot__legend {
+    flex-shrink: 0;
+  }
+
+  .analysis-page__scroll--brief .pca-biplot__legend-hint,
+  .analysis-page__scroll--brief .pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-hint {
+    margin-top: auto;
+    padding-top: clamp(0.35rem, 1.8vh, 1.1rem);
+  }
+}
+
+.analysis-page__scroll--brief .analysis-page__card-title,
+.analysis-page__scroll--technical .analysis-page__card-title {
+  margin-bottom: 0.25rem;
+  font-size: 0.88rem;
+  flex-shrink: 0;
+}
+
+.analysis-page__scroll--brief .analysis-page__card-lead,
+.analysis-page__scroll--brief .analysis-page__tech-list,
+.analysis-page__scroll--technical .analysis-page__card-lead,
+.analysis-page__scroll--technical .analysis-page__tech-list {
+  font-size: 0.72rem;
+  line-height: 1.32;
+}
+
+.analysis-page__scroll--brief .analysis-page__card-lead,
+.analysis-page__scroll--technical .analysis-page__card-lead {
+  margin-bottom: 0.4rem;
+  flex-shrink: 0;
+}
+
+.analysis-page__scroll--brief .analysis-page__tech-list,
+.analysis-page__scroll--technical .analysis-page__tech-list {
+  flex: 0 0 auto;
+  display: block;
+  margin: 0;
+  min-height: 0;
+}
+
+.analysis-page__scroll--brief .analysis-page__tech-list li + li,
+.analysis-page__scroll--technical .analysis-page__tech-list li + li {
+  margin-top: 0.18rem;
+}
+
+.analysis-page__scroll--brief .analysis-panel__matrix {
+  width: min(100%, 20rem);
+  table-layout: fixed;
+  margin-top: 0.3rem;
+  margin-bottom: 0;
+  margin-inline: auto;
+  font-size: 0.62rem;
+  flex-shrink: 0;
+}
+
+.analysis-page__scroll--brief .analysis-panel__matrix caption {
+  font-size: 0.62rem;
+  margin-bottom: 0.15rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.analysis-page__scroll--brief .analysis-panel__matrix th,
+.analysis-page__scroll--brief .analysis-panel__matrix td {
+  padding: 0.22rem 0.3rem;
+  width: 33.333%;
+}
+
+.analysis-page__scroll--technical .analysis-panel__matrix {
+  width: min(100%, 22rem);
+  table-layout: fixed;
+  margin-top: 0.45rem;
+  margin-bottom: 0;
+  margin-inline: auto;
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+
+.analysis-page__scroll--technical .analysis-panel__matrix caption {
+  font-size: 0.72rem;
+  margin-bottom: 0.25rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.analysis-page__scroll--technical .analysis-panel__matrix th,
+.analysis-page__scroll--technical .analysis-panel__matrix td {
+  padding: 0.35rem 0.45rem;
+  width: 33.333%;
+}
+
+.analysis-page__scroll--technical .analysis-page__equation {
+  font-size: 0.68rem;
+  padding: 0.45rem 0.55rem;
+  margin-bottom: 0.45rem;
+}
+
+.analysis-page__scroll--technical .analysis-panel__note {
+  margin-top: 0.75rem;
+  font-size: 0.58rem;
+  line-height: 1.35;
+}
+
+.analysis-page__scroll--technical .analysis-panel__contributions {
+  font-size: 0.68rem;
+}
+
+.analysis-page__scroll--technical .analysis-panel__heatmap {
+  font-size: 0.68rem;
+}
+
+.analysis-page__strip {
+  flex: 0 0 auto;
+  container-type: inline-size;
+  container-name: analysis-summary;
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+}
+
+.analysis-page__strip .analysis-page__card-title {
+  margin-bottom: 0.4rem;
+}
+
+.analysis-page__strip-items {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.45fr) minmax(0, 0.9fr) minmax(0, 0.95fr);
+  align-items: stretch;
+  gap: 0;
+}
+
+.analysis-page__strip-item {
+  min-width: 0;
+  padding: 0.05rem 0.85rem;
+}
+
+.analysis-page__strip-item:first-child {
+  padding-left: 0;
+}
+
+.analysis-page__strip-item:last-child {
+  padding-right: 0;
+}
+
+.analysis-page__strip-item:not(:first-child) {
+  border-left: 1px solid #e2e9dc;
+}
+
+/* 2x2 when the strip is mid-width but still wide enough for Labels */
+@container analysis-summary (max-width: 42rem) {
+  .analysis-page__strip-items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analysis-page__strip-item,
+  .analysis-page__strip-item:not(:first-child) {
+    padding: 0.4rem 0.75rem;
+    border: none;
+  }
+
+  .analysis-page__strip-item:nth-child(2n - 1) {
+    padding-left: 0;
+  }
+
+  .analysis-page__strip-item:nth-child(2n) {
+    padding-right: 0;
+    border-left: 1px solid #e2e9dc;
+  }
+
+  .analysis-page__strip-item:nth-child(n + 3) {
+    border-top: 1px solid #e2e9dc;
+  }
+}
+
+/* Stack before Labels overflows a 2x2 cell */
+@container analysis-summary (max-width: 32rem) {
+  .analysis-page__strip-items {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .analysis-page__strip-item,
+  .analysis-page__strip-item:not(:first-child) {
+    padding: 0.4rem 0;
+    border: none;
+  }
+
+  .analysis-page__strip-item:not(:first-child) {
+    border-top: 1px solid #e2e9dc;
+  }
+}
+
+.analysis-page__strip-label {
+  display: block;
+  margin-bottom: 0.1rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7f6b;
+}
+
+.analysis-page__strip strong {
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #2d4a2d;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.analysis-page__plot {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem 1.1rem 0.65rem;
+  box-shadow: 0 1px 4px rgba(26, 46, 26, 0.06);
+  display: flex;
+  flex-direction: column;
+  container-type: inline-size;
+  container-name: analysis-plot;
+}
+
+.analysis-page__body .analysis-page__plot .pca-biplot__chart {
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+.analysis-page__card {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem 1.1rem 1.15rem;
+  box-shadow: 0 1px 4px rgba(26, 46, 26, 0.06);
+}
+
+.analysis-page__card-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #2d4a2d;
+  line-height: 1.3;
+}
+
+.analysis-page__card-lead {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  color: #3d523d;
+  line-height: 1.5;
+}
+
+.analysis-page__equation {
+  margin: 0 0 0.55rem;
+  padding: 0.55rem 0.65rem;
+  background: #f4f7f0;
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  color: #2d4a2d;
+  line-height: 1.45;
+  overflow-x: auto;
+}
+
+.analysis-page__tech-list {
+  margin: 0.65rem 0 0;
+  padding-left: 1.15rem;
+  font-size: 0.82rem;
+  color: #3d523d;
+  line-height: 1.5;
+}
+
+.analysis-page__tech-list li + li {
+  margin-top: 0.4rem;
+}
+
+.analysis-panel__contributions {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.analysis-panel__contributions th,
+.analysis-panel__contributions td {
+  border-top: 1px solid #e2e9dc;
+  padding: 0.45rem 0.55rem;
+  text-align: left;
+}
+
+.analysis-panel__contributions th[scope="row"] {
+  font-weight: 500;
   color: #2d4a2d;
 }
 
-.analysis-panel__close {
-  border: none;
-  background: transparent;
+.analysis-panel__contributions thead th {
+  background: #f4f7f0;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #4a5f4a;
-  font-size: 1.35rem;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0.1rem 0.35rem;
-  border-radius: 6px;
 }
 
-.analysis-panel__close:hover {
-  background: #eef3e8;
-}
-
-.analysis-panel__stats {
-  margin-top: 0.85rem;
+.analysis-panel__contributions tbody td {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.78rem;
-  color: #3d523d;
-  line-height: 1.45;
 }
 
-.analysis-panel__stats p {
-  margin: 0 0 0.45rem;
+.analysis-panel__heatmap-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.analysis-panel__heatmap {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.analysis-panel__heatmap thead tr,
+.analysis-panel__heatmap tbody tr {
+  height: 2.55rem;
+}
+
+.analysis-panel__heatmap th,
+.analysis-panel__heatmap td {
+  border: 1px solid #d4dcc8;
+  padding: 0.35rem 0.3rem;
+  text-align: center;
+  vertical-align: middle;
+  min-width: 0;
+  height: 2.55rem;
+  width: 20%;
+}
+
+.analysis-panel__heatmap thead th,
+.analysis-panel__heatmap th[scope="row"] {
+  background: #f4f7f0;
+  color: #2d4a2d;
+  font-weight: 600;
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+.analysis-panel__heatmap td {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 .analysis-panel__matrix {
   width: 100%;
   border-collapse: collapse;
-  margin: 0.55rem 0 0.65rem;
-  font-size: 0.75rem;
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
 }
 
 .analysis-panel__matrix caption {
   text-align: left;
   font-weight: 600;
-  margin-bottom: 0.35rem;
+  font-size: 0.82rem;
+  color: #2d4a2d;
+  margin-bottom: 0.4rem;
 }
 
 .analysis-panel__matrix th,
@@ -93,6 +988,8 @@
 }
 
 .analysis-panel__note {
-  font-size: 0.7rem;
+  margin: 0;
+  font-size: 0.75rem;
   color: #5a6f5a;
+  line-height: 1.45;
 }

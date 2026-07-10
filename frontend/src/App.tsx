@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import SpicebushMap from "./components/SpicebushMap";
 import TreeSidebar from "./components/TreeSidebar";
 import FilterPanel from "./components/FilterPanel";
+import DataPanel from "./components/DataPanel";
 import RoutePanel from "./components/RoutePanel";
 import AnalysisPanel, { AnalysisPanelTab } from "./components/AnalysisPanel";
 import HelpPanel from "./components/HelpPanel";
@@ -18,13 +19,15 @@ import {
   saveSelection,
   type SavedSelectionSummary,
 } from "./api/selections";
-import { getAnalysis } from "./api/analysis";
+import { getAnalysis, getBundledAnalysis } from "./api/analysis";
+import { getTrees } from "./api/spreadsheet";
 import type { AnalysisResponse } from "./types/analysis";
 import {
   clampFiltersToBounds,
   computeDataBounds,
   countActiveFilters,
   createDefaultFilters,
+  type SexPredictionById,
 } from "./utils/filters";
 import {
   clearManualExcluded,
@@ -39,6 +42,8 @@ import {
   computeSurveyRoute,
   type ComputedRoute,
 } from "./utils/route";
+import { isUncertainPrediction } from "./utils/sexPrediction";
+import { subscribeDataUpdated } from "./utils/dataSync";
 import "./App.css";
 
 function App() {
@@ -50,14 +55,20 @@ function App() {
   const hasOpenedHelp = useRef(false);
   const [savedSelections, setSavedSelections] = useState<SavedSelectionSummary[]>([]);
   const [selectionApiAvailable, setSelectionApiAvailable] = useState(true);
-  const [selectionMessage, setSelectionMessage] = useState<string | null>(null);
   const [route, setRoute] = useState<ComputedRoute | null>(null);
   const [routeActive, setRouteActive] = useState(false);
   const [routeStartTreeId, setRouteStartTreeId] = useState<number | null>(null);
   const [routeStartPickMode, setRouteStartPickMode] = useState(false);
-  const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResponse | null>(() =>
+    getBundledAnalysis(),
+  );
   const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [analysisExpanded, setAnalysisExpanded] = useState(false);
+  const [analysisPageExiting, setAnalysisPageExiting] = useState(false);
+  const [analysisPopupClosing, setAnalysisPopupClosing] = useState(false);
+  const [analysisPopupHeight, setAnalysisPopupHeight] = useState(0);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [routeExpanded, setRouteExpanded] = useState(false);
   const [highlightedTreeId, setHighlightedTreeId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,19 +78,45 @@ function App() {
     [trees],
   );
 
+  const sexPredictions = useMemo((): SexPredictionById | undefined => {
+    if (!analysis) {
+      return undefined;
+    }
+    const map: SexPredictionById = new Map();
+    for (const point of analysis.pca.points) {
+      map.set(point.id, {
+        sexKnown: point.sex_known,
+        probabilityFemale: point.probability_female,
+      });
+    }
+    return map;
+  }, [analysis]);
+
   const mapTrees = useMemo(() => {
     if (!selection || !bounds) {
       return trees;
     }
-    return getMapTrees(trees, selection, bounds);
-  }, [trees, selection, bounds]);
+    return getMapTrees(trees, selection, bounds, sexPredictions);
+  }, [trees, selection, bounds, sexPredictions]);
+
+  const treesForMap = useMemo(() => {
+    if (
+      selectedTree &&
+      !mapTrees.some(
+        (tree) => tree.properties.id === selectedTree.properties.id,
+      )
+    ) {
+      return [...mapTrees, selectedTree];
+    }
+    return mapTrees;
+  }, [mapTrees, selectedTree]);
 
   const visibleTrees = useMemo(() => {
     if (!selection || !bounds) {
       return trees;
     }
-    return getVisibleTrees(trees, selection, bounds);
-  }, [trees, selection, bounds]);
+    return getVisibleTrees(trees, selection, bounds, sexPredictions);
+  }, [trees, selection, bounds, sexPredictions]);
 
   const manualExcludedIds = useMemo(
     () => (selection ? [...selection.manualExcluded] : []),
@@ -101,14 +138,35 @@ function App() {
   }, [selection, bounds, activeAttributeCount]);
 
   useEffect(() => {
-    fetch("/data/spicebush.json")
-      .then((res) => {
+    let cancelled = false;
+
+    async function loadTrees() {
+      try {
+        const fromApi = await getTrees();
+        if (cancelled) {
+          return;
+        }
+        setTrees(fromApi.features);
+        setSelection(
+          createDefaultSelection(
+            createDefaultFilters(computeDataBounds(fromApi.features)),
+          ),
+        );
+        setLoading(false);
+        return;
+      } catch {
+        // Fall back to static JSON when the API is offline.
+      }
+
+      try {
+        const res = await fetch("/data/spicebush.json");
         if (!res.ok) {
           throw new Error(`Failed to load spicebush data (${res.status})`);
         }
-        return res.json() as Promise<TreeFeatureCollection>;
-      })
-      .then((data) => {
+        const data = (await res.json()) as TreeFeatureCollection;
+        if (cancelled) {
+          return;
+        }
         setTrees(data.features);
         setSelection(
           createDefaultSelection(
@@ -116,11 +174,44 @@ function App() {
           ),
         );
         setLoading(false);
-      })
-      .catch((err: Error) => {
-        setError(err.message);
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+        setError(err instanceof Error ? err.message : "Failed to load data");
         setLoading(false);
-      });
+      }
+    }
+
+    void loadTrees();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    return subscribeDataUpdated(() => {
+      void getTrees()
+        .then((collection) => {
+          const nextTrees = collection.features;
+          const nextBounds = computeDataBounds(nextTrees);
+          setTrees(nextTrees);
+          setSelection(createDefaultSelection(createDefaultFilters(nextBounds)));
+          setSelectedTree(null);
+          setHighlightedTreeId(null);
+          setRoute(null);
+          setRouteActive(false);
+          setRouteStartTreeId(null);
+          setRouteStartPickMode(false);
+        })
+        .catch(() => undefined);
+      void getAnalysis()
+        .then((next) => {
+          setAnalysis(next);
+          setAnalysisError(null);
+        })
+        .catch(() => undefined);
+    });
   }, []);
 
   useEffect(() => {
@@ -130,7 +221,8 @@ function App() {
         setAnalysisError(null);
       })
       .catch(() => {
-        setAnalysisError("Analysis data could not be loaded.");
+        setAnalysis(getBundledAnalysis());
+        setAnalysisError(null);
       });
   }, []);
 
@@ -152,17 +244,50 @@ function App() {
   );
 
   useEffect(() => {
-    listSavedSelections()
-      .then((items) => {
-        setSavedSelections(items);
-        setSelectionApiAvailable(true);
-      })
-      .catch(() => {
-        setSelectionApiAvailable(false);
-        setSelectionMessage(
-          "Saved filters require the API server on port 8000.",
-        );
-      });
+    let cancelled = false;
+    let retryTimer: number | undefined;
+    let attempt = 0;
+
+    const loadSavedSelections = () => {
+      listSavedSelections()
+        .then((items) => {
+          if (cancelled) {
+            return;
+          }
+          setSavedSelections(items);
+          setSelectionApiAvailable(true);
+        })
+        .catch(() => {
+          if (cancelled) {
+            return;
+          }
+          setSelectionApiAvailable(false);
+          attempt += 1;
+          // Backend may still be starting; keep retrying for a bit.
+          if (attempt <= 12) {
+            retryTimer = window.setTimeout(
+              loadSavedSelections,
+              Math.min(800 * attempt, 4000),
+            );
+          }
+        });
+    };
+
+    loadSavedSelections();
+
+    const onFocus = () => {
+      if (!cancelled) {
+        attempt = 0;
+        loadSavedSelections();
+      }
+    };
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(retryTimer);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   useEffect(() => {
@@ -212,17 +337,31 @@ function App() {
   useEffect(() => {
     if (
       selectedTree &&
-      !mapTrees.some((tree) => tree.properties.id === selectedTree.properties.id)
+      !trees.some((tree) => tree.properties.id === selectedTree.properties.id)
     ) {
       setSelectedTree(null);
     }
-  }, [mapTrees, selectedTree]);
+  }, [trees, selectedTree]);
 
   const handleSelectTree = (tree: TreeFeature) => {
     setSelectedTree(tree);
   };
 
-  const handleAnalysisSelectTree = (treeId: number) => {
+  const handleSearchTreeId = (id: number) => {
+    const tree = trees.find((item) => item.properties.id === id);
+    if (!tree) {
+      return false;
+    }
+    setSelectedTree(tree);
+    return true;
+  };
+
+  const handleAnalysisSelectTree = (treeId: number | null) => {
+    if (treeId === null) {
+      setSelectedTree(null);
+      return;
+    }
+
     const tree = trees.find((item) => item.properties.id === treeId);
     if (tree) {
       setSelectedTree(tree);
@@ -264,9 +403,8 @@ function App() {
         ...current.filter((item) => item.id !== saved.id),
       ]);
       setSelectionApiAvailable(true);
-      setSelectionMessage(`Saved "${saved.name}"`);
-    } catch (err) {
-      setSelectionMessage(err instanceof Error ? err.message : "Save failed");
+    } catch {
+      // Keep save UI quiet on failure; button state reflects API availability.
     }
   };
 
@@ -288,9 +426,8 @@ function App() {
           : current,
       );
       setSelectedTree(null);
-      setSelectionMessage(`Loaded "${saved.name}"`);
-    } catch (err) {
-      setSelectionMessage(err instanceof Error ? err.message : "Load failed");
+    } catch {
+      // Quiet on failure.
     }
   };
 
@@ -307,9 +444,8 @@ function App() {
     try {
       await deleteSavedSelection(id);
       setSavedSelections((current) => current.filter((entry) => entry.id !== id));
-      setSelectionMessage(`Deleted "${item.name}"`);
-    } catch (err) {
-      setSelectionMessage(err instanceof Error ? err.message : "Delete failed");
+    } catch {
+      // Quiet on failure.
     }
   };
 
@@ -350,6 +486,31 @@ function App() {
 
   const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN?.trim();
 
+  const selectedSexPrediction = useMemo(() => {
+    if (!selectedTree || !analysis) {
+      return null;
+    }
+
+    const point = analysis.pca.points.find(
+      (item) => item.id === selectedTree.properties.id,
+    );
+    if (
+      !point ||
+      point.sex_known ||
+      point.probability_female === null ||
+      point.probability_female === undefined
+    ) {
+      return null;
+    }
+
+    const probabilityFemale = point.probability_female;
+    return {
+      probabilityFemale,
+      predictedSex: (probabilityFemale >= 0.5 ? "F" : "M") as "F" | "M",
+      uncertain: isUncertainPrediction(probabilityFemale),
+    };
+  }, [analysis, selectedTree]);
+
   if (!mapboxToken) {
     return (
       <div className="app-shell app-shell--centered">
@@ -375,7 +536,7 @@ function App() {
   if (loading) {
     return (
       <div className="app-shell app-shell--centered">
-        <p>Loading 74 spicebush individuals…</p>
+        <p className="app-loading">Loading spicebush individuals…</p>
       </div>
     );
   }
@@ -391,6 +552,13 @@ function App() {
   const selectedIsExcluded =
     selectedTree !== null &&
     selection?.manualExcluded.has(selectedTree.properties.id) === true;
+
+  const analysisPopupOpen = analysisOpen && !analysisExpanded;
+  /** Layout signal for ID card: drop as soon as popup close animation starts. */
+  const analysisLayoutActive = analysisPopupOpen && !analysisPopupClosing;
+  const toolboxOverlayOpen = analysisLayoutActive || routeExpanded;
+  const showAnalysisPage =
+    analysisOpen && (analysisExpanded || analysisPageExiting);
 
   return (
     <div className="app-shell">
@@ -425,9 +593,11 @@ function App() {
         </div>
       </header>
 
-      <main className="app-main">
+      <main
+        className={`app-main${analysisPopupOpen ? " app-main--analysis-popup-open" : ""}`}
+      >
         <SpicebushMap
-          trees={mapTrees}
+          trees={treesForMap}
           basemap={basemap}
           mapboxToken={mapboxToken}
           regionPolygon={selection?.regionPolygon ?? null}
@@ -439,6 +609,8 @@ function App() {
           routeStops={routeGeoJSON.stops}
           routeStartTreeId={routeStartTreeId}
           routeStartPickMode={routeStartPickMode}
+          analysisPopupHeight={analysisPopupOpen ? analysisPopupHeight + 44 : 0}
+          flyToOnSelect
           onSelectTree={handleSelectTree}
           onHoverTree={handleHoverTree}
           onToggleTree={handleToggleTree}
@@ -451,47 +623,84 @@ function App() {
           onRouteStartPick={handleRouteStartPick}
         />
         <div className="map-top-left-controls">
-          {analysis && (
-            analysisOpen ? (
-              <AnalysisPanel
-                analysis={analysis}
-                highlightedTreeId={highlightedTreeId}
-                selectedTreeId={selectedTree?.properties.id ?? null}
-                onHoverTree={handleHoverTree}
-                onSelectTree={handleAnalysisSelectTree}
-                onClose={() => setAnalysisOpen(false)}
+          <div className="map-top-left-controls__tabs">
+            {selection && bounds && (
+              <RoutePanel
+                visibleCount={visibleTrees.length}
+                route={route}
+                routeStartTreeId={routeStartTreeId}
+                routeStartPickMode={routeStartPickMode}
+                onPickRouteStart={handlePickRouteStart}
+                onGenerateRoute={handleGenerateRoute}
+                onClearRoute={handleClearRoute}
+                onClose={handleCloseRoutePanel}
+                suppress={analysisPopupOpen}
+                onExpandedChange={(expanded) => {
+                  setRouteExpanded(expanded);
+                  if (expanded) {
+                    setAnalysisOpen(false);
+                    setAnalysisExpanded(false);
+                    setAnalysisPopupClosing(false);
+                  }
+                }}
               />
-            ) : (
+            )}
+            {analysis && (
               <AnalysisPanelTab
-                open={false}
-                onToggle={() => setAnalysisOpen(true)}
+                open={analysisOpen && !analysisExpanded}
+                onToggle={() => {
+                  if (analysisOpen && !analysisExpanded) {
+                    setAnalysisOpen(false);
+                    setAnalysisExpanded(false);
+                    setAnalysisPopupClosing(false);
+                    return;
+                  }
+                  setAnalysisExpanded(false);
+                  setAnalysisPopupClosing(false);
+                  setAnalysisOpen(true);
+                }}
               />
-            )
+            )}
+            <DataPanel />
+          </div>
+          {analysis && analysisOpen && (
+            <AnalysisPanel
+              analysis={analysis}
+              expanded={false}
+              dormant={analysisExpanded}
+              trees={trees}
+              highlightedTreeId={highlightedTreeId}
+              selectedTreeId={selectedTree?.properties.id ?? null}
+              visibleTreeIds={visibleTreeIds}
+              onHoverTree={handleHoverTree}
+              onSelectTree={handleAnalysisSelectTree}
+              onExpand={() => setAnalysisExpanded(true)}
+              onMinimize={() => setAnalysisExpanded(false)}
+              onCloseBegin={() => setAnalysisPopupClosing(true)}
+              onClose={() => {
+                setAnalysisOpen(false);
+                setAnalysisExpanded(false);
+                setAnalysisPageExiting(false);
+                setAnalysisPopupClosing(false);
+              }}
+              onPopupHeightChange={setAnalysisPopupHeight}
+            />
           )}
           {analysisError && !analysis && (
             <p className="analysis-panel__error">{analysisError}</p>
           )}
-          {selection && bounds && (
-            <RoutePanel
-              visibleCount={visibleTrees.length}
-              route={route}
-              routeStartTreeId={routeStartTreeId}
-              routeStartPickMode={routeStartPickMode}
-              onPickRouteStart={handlePickRouteStart}
-              onGenerateRoute={handleGenerateRoute}
-              onClearRoute={handleClearRoute}
-              onClose={handleCloseRoutePanel}
-            />
-          )}
         </div>
         <div className="map-top-controls">
-          <HelpPanel
-            open={helpOpen}
-            showFab={!selectedTree}
-            onOpen={() => setHelpOpen(true)}
-            onClose={() => setHelpOpen(false)}
-          />
-          {selection && bounds && (
+          <div className="map-top-controls__help">
+            <HelpPanel
+              open={helpOpen}
+              showFab={!showAnalysisPage}
+              individualCount={trees.length}
+              onOpen={() => setHelpOpen(true)}
+              onClose={() => setHelpOpen(false)}
+            />
+          </div>
+          {selection && bounds && !showAnalysisPage && (
             <FilterPanel
               attributeFilters={selection.attributeFilters}
               bounds={bounds}
@@ -502,7 +711,6 @@ function App() {
               manualExcludedCount={selection.manualExcluded.size}
               savedSelections={savedSelections}
               selectionApiAvailable={selectionApiAvailable}
-              selectionMessage={selectionMessage}
               onAttributeFiltersChange={(attributeFilters) =>
                 setSelection((current) =>
                   current ? { ...current, attributeFilters } : current,
@@ -528,17 +736,45 @@ function App() {
               onSaveSelection={handleSaveSelection}
               onLoadSelection={handleLoadSelection}
               onDeleteSelection={handleDeleteSelection}
+              onSearchTreeId={handleSearchTreeId}
             />
           )}
         </div>
-        {selectedTree && (
+        {selectedTree && !showAnalysisPage && (
           <TreeSidebar
             tree={selectedTree}
             manuallyExcluded={selectedIsExcluded}
+            compact={toolboxOverlayOpen}
+            analysisLayout={analysisLayoutActive}
+            reflowKey={toolboxOverlayOpen ? analysisPopupHeight + (routeExpanded ? 1 : 0) : 0}
+            sexPrediction={selectedSexPrediction}
             onClose={handleCloseSidebar}
           />
         )}
       </main>
+      {analysis && showAnalysisPage && (
+        <AnalysisPanel
+          analysis={analysis}
+          expanded
+          trees={trees}
+          highlightedTreeId={highlightedTreeId}
+          selectedTreeId={selectedTree?.properties.id ?? null}
+          onHoverTree={handleHoverTree}
+          onSelectTree={handleAnalysisSelectTree}
+          onExpand={() => setAnalysisExpanded(true)}
+          onMinimize={() => {
+            setAnalysisExpanded(false);
+            setAnalysisPageExiting(true);
+          }}
+          onMinimized={() => setAnalysisPageExiting(false)}
+          onClose={() => {
+            setAnalysisOpen(false);
+            setAnalysisExpanded(false);
+            setAnalysisPageExiting(false);
+            setAnalysisPopupClosing(false);
+          }}
+        />
+      )}
     </div>
   );
 }

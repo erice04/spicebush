@@ -1,7 +1,7 @@
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import type { Polygon } from "geojson";
 import type { DataBounds, SelectionState, TreeFeature } from "../types";
-import { filterTrees } from "./filters";
+import { filterTrees, type SexPredictionById } from "./filters";
 
 export function createDefaultSelection(
   attributeFilters: SelectionState["attributeFilters"],
@@ -31,11 +31,13 @@ export function getMapTrees(
   trees: TreeFeature[],
   selection: SelectionState,
   bounds: DataBounds,
+  sexPredictions?: SexPredictionById,
 ): TreeFeature[] {
   const afterAttributes = filterTrees(
     trees,
     selection.attributeFilters,
     bounds,
+    sexPredictions,
   );
   return filterByRegion(afterAttributes, selection.regionPolygon);
 }
@@ -45,8 +47,9 @@ export function getVisibleTrees(
   trees: TreeFeature[],
   selection: SelectionState,
   bounds: DataBounds,
+  sexPredictions?: SexPredictionById,
 ): TreeFeature[] {
-  const mapTrees = getMapTrees(trees, selection, bounds);
+  const mapTrees = getMapTrees(trees, selection, bounds, sexPredictions);
 
   if (selection.manualExcluded.size === 0) {
     return mapTrees;

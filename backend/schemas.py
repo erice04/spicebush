@@ -85,3 +85,13 @@ class AnalysisResponse(BaseModel):
     pca: PcaResult
     classification: ClassificationResult
     preprocessing: PreprocessingInfo
+
+
+class SpreadsheetPayload(BaseModel):
+    columns: list[str]
+    rows: list[dict[str, Any]]
+
+
+class SpreadsheetSaveResponse(BaseModel):
+    trees: dict[str, Any]
+    analysis: dict[str, Any]

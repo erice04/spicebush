@@ -5,6 +5,25 @@
   height: 100%;
 }
 
+.spicebush-map::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+}
+
+.spicebush-map--style-swap {
+  pointer-events: none;
+}
+
+.spicebush-map--style-swap::after {
+  opacity: 1;
+}
+
 .spicebush-map .mapboxgl-map,
 .spicebush-map .mapboxgl-canvas-container,
 .spicebush-map .mapboxgl-canvas {
@@ -13,12 +32,36 @@
 }
 
 .spicebush-map .mapboxgl-ctrl-bottom-left {
-  bottom: var(--overlay-inset);
+  bottom: calc(var(--overlay-inset) + 1.25rem);
   left: var(--overlay-inset);
 }
 
+.spicebush-map .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-logo {
+  position: relative;
+  top: 1.5rem;
+}
+
+.spicebush-map .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl,
 .spicebush-map .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-group {
-  margin-bottom: 1.75rem;
+  margin: 0;
+  float: none;
+}
+
+.spicebush-map .mapboxgl-ctrl-bottom-left > .mapbox-gl-draw:not(:has(button)) {
+  display: none;
+}
+
+.spicebush-map .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-group {
+  width: 30px;
+  box-sizing: border-box;
+}
+
+.spicebush-map .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-group button {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .spicebush-map .mapboxgl-ctrl-group {
@@ -26,8 +69,8 @@
 }
 
 .spicebush-map .spicebush-map-ctrl-group .mapbox-gl-draw_ctrl-draw-btn {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   box-sizing: border-box;
   display: block;
   padding: 0;

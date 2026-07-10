@@ -33,16 +33,13 @@ FEATURE_LABELS = {
 LABELED_SEX_VALUES = {"M", "F"}
 
 
-def _parse_stem_count(value: str) -> float | None:
+def _parse_stem_count(value: str) -> float:
     if value == "M":
-        return None
+        return 3.0
     return float(int(value))
 
 
-def _load_dataframe() -> pd.DataFrame:
-    with DATA_PATH.open(encoding="utf-8") as handle:
-        payload = json.load(handle)
-
+def _dataframe_from_collection(payload: dict[str, Any]) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     for feature in payload["features"]:
         properties = feature["properties"]
@@ -59,23 +56,74 @@ def _load_dataframe() -> pd.DataFrame:
 
     frame = pd.DataFrame(rows)
     frame["stem_count"] = frame["stem_count_raw"].map(_parse_stem_count)
-
-    numeric_stems = frame.loc[frame["stem_count"].notna(), "stem_count"]
-    stem_median = float(numeric_stems.median()) if not numeric_stems.empty else 2.0
-    frame["stem_count"] = frame["stem_count"].fillna(stem_median)
-
-    dbh_median = float(frame["dbh_cm"].median(skipna=True))
-    frame["dbh_cm"] = frame["dbh_cm"].fillna(dbh_median)
-
+    frame["dbh_cm"] = frame["dbh_cm"].fillna(0.0)
     frame["sex_known"] = frame["sex"].isin(LABELED_SEX_VALUES)
-
     return frame
+
+
+def _load_dataframe() -> pd.DataFrame:
+    with DATA_PATH.open(encoding="utf-8") as handle:
+        payload = json.load(handle)
+    return _dataframe_from_collection(payload)
+
+
+def _build_analysis(frame: pd.DataFrame) -> dict[str, Any]:
+    pca = _run_pca(frame)
+    classification = _run_classification(frame)
+
+    probability_by_id = {
+        item["id"]: item["probability_female"]
+        for item in classification["loocv_predictions"]
+    }
+    probability_by_id.update(
+        {
+            item["id"]: item["probability_female"]
+            for item in classification["predictions"]
+        }
+    )
+
+    for point in pca["points"]:
+        point["probability_female"] = (
+            float(probability_by_id[point["id"]])
+            if point["id"] in probability_by_id
+            else None
+        )
+        point["is_prediction"] = not point["sex_known"]
+
+    return {
+        "pca": pca,
+        "classification": classification,
+        "preprocessing": {
+            "feature_columns": FEATURE_COLUMNS,
+            "labeled_sex_values": sorted(LABELED_SEX_VALUES),
+            "unlabeled_sex_values": sorted(
+                set(frame.loc[~frame["sex_known"], "sex"].dropna().unique())
+            ),
+            "imputed_features": {
+                "dbh_cm": "missing/NA treated as 0",
+                "stem_count": "'M' (multiple stems) treated as 3",
+            },
+            "pca_sample_size": int(len(frame)),
+            "classification_sample_size": int(frame["sex_known"].sum()),
+        },
+    }
+
+
+def compute_analysis_from_collection(payload: dict[str, Any]) -> dict[str, Any]:
+    return _build_analysis(_dataframe_from_collection(payload))
+
+
+@lru_cache(maxsize=1)
+def compute_analysis() -> dict[str, Any]:
+    return _build_analysis(_load_dataframe())
 
 
 def _run_pca(frame: pd.DataFrame) -> dict[str, Any]:
     features = frame[FEATURE_COLUMNS].to_numpy(dtype=float)
     scaler = StandardScaler()
     scaled = scaler.fit_transform(features)
+
+    correlation = np.corrcoef(scaled, rowvar=False)
 
     pca = PCA(n_components=len(FEATURE_COLUMNS))
     coordinates = pca.fit_transform(scaled)
@@ -99,6 +147,8 @@ def _run_pca(frame: pd.DataFrame) -> dict[str, Any]:
             "label": FEATURE_LABELS[column],
             "pc1": float(loadings[column_index, 0]),
             "pc2": float(loadings[column_index, 1]),
+            "weight_pc1": float(pca.components_[0, column_index]),
+            "weight_pc2": float(pca.components_[1, column_index]),
         }
         for column_index, column in enumerate(FEATURE_COLUMNS)
     ]
@@ -109,6 +159,14 @@ def _run_pca(frame: pd.DataFrame) -> dict[str, Any]:
         "explained_variance_ratio": [
             float(value) for value in pca.explained_variance_ratio_
         ],
+        "correlation": {
+            "variables": FEATURE_COLUMNS,
+            "labels": [
+                FEATURE_LABELS[column].split(" (")[0]
+                for column in FEATURE_COLUMNS
+            ],
+            "matrix": correlation.round(4).tolist(),
+        },
     }
 
 
@@ -224,8 +282,8 @@ def compute_analysis() -> dict[str, Any]:
                 set(frame.loc[~frame["sex_known"], "sex"].dropna().unique())
             ),
             "imputed_features": {
-                "dbh_cm": "median",
-                "stem_count": "median for 'M' (multiple stems)",
+                "dbh_cm": "missing/NA treated as 0",
+                "stem_count": "'M' (multiple stems) treated as 3",
             },
             "pca_sample_size": int(len(frame)),
             "classification_sample_size": int(frame["sex_known"].sum()),

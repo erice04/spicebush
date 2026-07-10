@@ -6,6 +6,12 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import type { BasemapStyle, TreeFeature } from "../types";
 import type { ComputedRoute } from "../utils/route";
+import {
+  buildPartialRouteGeoJSON,
+  EMPTY_ROUTE_LINE,
+  EMPTY_ROUTE_STOPS,
+  routeTraceDurationMs,
+} from "../utils/route";
 import "./SpicebushMap.css";
 
 const STYLE_URLS: Record<BasemapStyle, string> = {
@@ -90,6 +96,44 @@ interface SpicebushMapProps {
   onClearTree: () => void;
   onRegionChange: (polygon: Polygon | null) => void;
   onRouteStartPick: (tree: TreeFeature) => void;
+  analysisPopupHeight?: number;
+  flyToOnSelect?: boolean;
+}
+
+function getOverlayInsetPx(container: HTMLElement): number {
+  const insetValue = getComputedStyle(container)
+    .getPropertyValue("--overlay-inset")
+    .trim();
+  if (!insetValue) {
+    return 20;
+  }
+  if (insetValue.endsWith("rem")) {
+    const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    return parseFloat(insetValue) * rootFontSize;
+  }
+  return parseFloat(insetValue);
+}
+
+function getTreePopupOffset(
+  map: mapboxgl.Map,
+  coordinates: [number, number],
+  analysisPopupHeight: number,
+): mapboxgl.PopupOptions["offset"] {
+  if (analysisPopupHeight <= 0) {
+    return 10;
+  }
+
+  const mapContainer = map.getContainer();
+  const appMain = mapContainer.closest(".app-main") as HTMLElement | null;
+  const insetPx = getOverlayInsetPx(appMain ?? mapContainer);
+  const occlusionBottom = insetPx + analysisPopupHeight + 8;
+  const screenPoint = map.project(coordinates);
+
+  if (screenPoint.y >= occlusionBottom) {
+    return 10;
+  }
+
+  return [0, occlusionBottom - screenPoint.y + 10];
 }
 
 function treesToGeoJSON(trees: TreeFeature[]): GeoJSON.FeatureCollection {
@@ -155,6 +199,12 @@ function mergeDrawControlsIntoNavigation(map: mapboxgl.Map) {
   });
 
   drawGroup.remove();
+
+  const drawControl = corner.querySelector<HTMLElement>(".mapbox-gl-draw");
+  if (drawControl && !drawControl.querySelector(".mapbox-gl-draw_ctrl-draw-btn")) {
+    drawControl.remove();
+  }
+
   navGroup.classList.add("spicebush-map-ctrl-group");
 }
 
@@ -171,6 +221,58 @@ function extractPolygon(draw: MapboxDraw): Polygon | null {
   return polygonFeature.geometry;
 }
 
+const TREE_CIRCLE_LAYER = "spicebush-circles";
+const TREE_FOCUS_LAYER = "spicebush-circles-focus";
+
+function ensureFocusCircleLayer(map: mapboxgl.Map) {
+  if (!map.getSource("spicebush-trees") || map.getLayer(TREE_FOCUS_LAYER)) {
+    return;
+  }
+
+  map.addLayer({
+    id: TREE_FOCUS_LAYER,
+    type: "circle",
+    source: "spicebush-trees",
+    filter: ["==", ["get", "id"], -1],
+    paint: {
+      "circle-radius": 7,
+      "circle-color": "#3d7a3d",
+      "circle-stroke-color": "#f4f7f0",
+      "circle-stroke-width": 2,
+      "circle-opacity": 0.92,
+    },
+  });
+}
+
+function isActiveTreeExpression(
+  selectedTreeId: number | null,
+  highlightedTreeId: number | null,
+): mapboxgl.Expression {
+  return [
+    "any",
+    ["==", ["get", "id"], selectedTreeId ?? -1],
+    ["==", ["get", "id"], highlightedTreeId ?? -1],
+  ];
+}
+
+function queryTreeFeatures(
+  map: mapboxgl.Map,
+  point: mapboxgl.PointLike,
+): mapboxgl.MapboxGeoJSONFeature[] {
+  if (map.getLayer(TREE_FOCUS_LAYER)) {
+    const focused = map.queryRenderedFeatures(point, {
+      layers: [TREE_FOCUS_LAYER],
+    });
+    if (focused.length > 0) {
+      return focused;
+    }
+  }
+
+  return map.queryRenderedFeatures(point, {
+    layers: [TREE_CIRCLE_LAYER],
+  });
+}
+
 function applyCircleStyles(
   map: mapboxgl.Map,
   selectedTreeId: number | null,
@@ -178,22 +280,15 @@ function applyCircleStyles(
   excludedIds: number[],
   routeStartTreeId: number | null,
 ) {
-  if (!map.getLayer("spicebush-circles")) {
+  if (!map.getLayer(TREE_CIRCLE_LAYER)) {
     return;
   }
 
-  map.setPaintProperty("spicebush-circles", "circle-radius", [
-    "case",
-    [
-      "any",
-      ["==", ["get", "id"], selectedTreeId ?? -1],
-      ["==", ["get", "id"], highlightedTreeId ?? -1],
-    ],
-    9,
-    7,
-  ]);
+  ensureFocusCircleLayer(map);
 
-  map.setPaintProperty("spicebush-circles", "circle-color", [
+  const activeTree = isActiveTreeExpression(selectedTreeId, highlightedTreeId);
+
+  const circleColor: mapboxgl.Expression = [
     "case",
     ["==", ["get", "id"], routeStartTreeId ?? -1],
     "#c9781a",
@@ -208,9 +303,9 @@ function applyCircleStyles(
     ["in", ["get", "id"], ["literal", excludedIds]],
     "#8a968a",
     "#3d7a3d",
-  ]);
+  ];
 
-  map.setPaintProperty("spicebush-circles", "circle-opacity", [
+  const circleOpacity: mapboxgl.Expression = [
     "case",
     [
       "all",
@@ -223,39 +318,62 @@ function applyCircleStyles(
     ["in", ["get", "id"], ["literal", excludedIds]],
     0.5,
     0.92,
-  ]);
+  ];
 
-  map.setPaintProperty("spicebush-circles", "circle-stroke-color", [
+  const circleStrokeColor: mapboxgl.Expression = [
     "case",
     [
-      "any",
-      ["==", ["get", "id"], selectedTreeId ?? -1],
-      ["==", ["get", "id"], highlightedTreeId ?? -1],
-    ],
-    "#2d4a2d",
-    [
       "all",
-      ["==", ["get", "id"], selectedTreeId ?? -1],
+      ["==", ["get", "id"], highlightedTreeId ?? -1],
       ["in", ["get", "id"], ["literal", excludedIds]],
     ],
-    "#e8d4bc",
+    "#6b7f6b",
+    ["==", ["get", "id"], highlightedTreeId ?? -1],
+    "#2d4a2d",
     ["==", ["get", "id"], selectedTreeId ?? -1],
-    "#f4ece0",
+    "#f4f7f0",
     ["in", ["get", "id"], ["literal", excludedIds]],
     "#d0d8cc",
     "#f4f7f0",
-  ]);
+  ];
 
-  map.setPaintProperty("spicebush-circles", "circle-stroke-width", [
+  const circleStrokeWidth: mapboxgl.Expression = [
     "case",
-    [
-      "any",
-      ["==", ["get", "id"], selectedTreeId ?? -1],
-      ["==", ["get", "id"], highlightedTreeId ?? -1],
-    ],
+    activeTree,
     2.5,
     2,
+  ];
+
+  map.setPaintProperty(TREE_CIRCLE_LAYER, "circle-radius", 7);
+  map.setPaintProperty(TREE_CIRCLE_LAYER, "circle-color", circleColor);
+  map.setPaintProperty(TREE_CIRCLE_LAYER, "circle-opacity", [
+    "case",
+    activeTree,
+    0,
+    circleOpacity,
   ]);
+  map.setPaintProperty(TREE_CIRCLE_LAYER, "circle-stroke-color", circleStrokeColor);
+  map.setPaintProperty(TREE_CIRCLE_LAYER, "circle-stroke-width", 2);
+
+  if (!map.getLayer(TREE_FOCUS_LAYER)) {
+    return;
+  }
+
+  const hasActiveTree =
+    selectedTreeId !== null || highlightedTreeId !== null;
+
+  map.setFilter(
+    TREE_FOCUS_LAYER,
+    hasActiveTree
+      ? activeTree
+      : ["==", ["get", "id"], -1],
+  );
+
+  map.setPaintProperty(TREE_FOCUS_LAYER, "circle-radius", 7);
+  map.setPaintProperty(TREE_FOCUS_LAYER, "circle-color", circleColor);
+  map.setPaintProperty(TREE_FOCUS_LAYER, "circle-opacity", circleOpacity);
+  map.setPaintProperty(TREE_FOCUS_LAYER, "circle-stroke-color", circleStrokeColor);
+  map.setPaintProperty(TREE_FOCUS_LAYER, "circle-stroke-width", circleStrokeWidth);
 }
 
 export default function SpicebushMap({
@@ -277,11 +395,14 @@ export default function SpicebushMap({
   onClearTree,
   onRegionChange,
   onRouteStartPick,
+  analysisPopupHeight = 0,
+  flyToOnSelect = true,
 }: SpicebushMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const drawRef = useRef<MapboxDraw | null>(null);
   const popupRef = useRef<mapboxgl.Popup | null>(null);
+  const analysisPopupHeightRef = useRef(analysisPopupHeight);
   const treesRef = useRef(trees);
   const excludedIdsRef = useRef(manualExcludedIds);
   const onSelectTreeRef = useRef(onSelectTree);
@@ -294,9 +415,12 @@ export default function SpicebushMap({
   const routeLineRef = useRef(routeLine);
   const routeStopsRef = useRef(routeStops);
   const routeStartTreeIdRef = useRef(routeStartTreeId);
+  const regionPolygonRef = useRef(regionPolygon);
   const isSyncingDrawRef = useRef(false);
   const treeHandlersAttachedRef = useRef(false);
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const routeAnimFrameRef = useRef<number | null>(null);
+  const lastAnimatedRouteRef = useRef<ComputedRoute | null>(null);
 
   treesRef.current = trees;
   excludedIdsRef.current = manualExcludedIds;
@@ -310,6 +434,8 @@ export default function SpicebushMap({
   routeLineRef.current = routeLine;
   routeStopsRef.current = routeStops;
   routeStartTreeIdRef.current = routeStartTreeId;
+  regionPolygonRef.current = regionPolygon;
+  analysisPopupHeightRef.current = analysisPopupHeight;
 
   const syncDrawPolygon = useCallback((polygon: Polygon | null) => {
     const draw = drawRef.current;
@@ -379,9 +505,9 @@ export default function SpicebushMap({
         mergeDrawControlsIntoNavigation(map);
       }
 
-      syncDrawPolygon(regionPolygon);
+      syncDrawPolygon(regionPolygonRef.current);
     },
-    [publishDrawnRegion, regionPolygon, syncDrawPolygon],
+    [publishDrawnRegion, syncDrawPolygon],
   );
 
   const ensureRouteLineLayer = useCallback((map: mapboxgl.Map) => {
@@ -454,6 +580,31 @@ export default function SpicebushMap({
     stopSource?.setData(routeStopsRef.current);
   }, []);
 
+  const cancelRouteAnimation = useCallback(() => {
+    if (routeAnimFrameRef.current !== null) {
+      window.cancelAnimationFrame(routeAnimFrameRef.current);
+      routeAnimFrameRef.current = null;
+    }
+  }, []);
+
+  const setRouteLayerData = useCallback(
+    (
+      map: mapboxgl.Map,
+      line: GeoJSON.FeatureCollection<GeoJSON.LineString>,
+      stops: GeoJSON.FeatureCollection<GeoJSON.Point>,
+    ) => {
+      const lineSource = map.getSource("survey-route-line") as
+        | mapboxgl.GeoJSONSource
+        | undefined;
+      const stopSource = map.getSource("survey-route-stops") as
+        | mapboxgl.GeoJSONSource
+        | undefined;
+      lineSource?.setData(line);
+      stopSource?.setData(stops);
+    },
+    [],
+  );
+
   const attachTreeInteractionHandlers = useCallback((map: mapboxgl.Map) => {
     if (treeHandlersAttachedRef.current) {
       return;
@@ -467,9 +618,7 @@ export default function SpicebushMap({
         return;
       }
 
-      const features = map.queryRenderedFeatures(event.point, {
-        layers: ["spicebush-circles"],
-      });
+      const features = queryTreeFeatures(map, event.point);
 
       if (features.length > 0) {
         const feature = features[0];
@@ -509,9 +658,7 @@ export default function SpicebushMap({
         return;
       }
 
-      const features = map.queryRenderedFeatures(event.point, {
-        layers: ["spicebush-circles"],
-      });
+      const features = queryTreeFeatures(map, event.point);
 
       if (features.length === 0) {
         return;
@@ -532,7 +679,9 @@ export default function SpicebushMap({
       onToggleTreeRef.current(tree);
     });
 
-    map.on("mouseenter", "spicebush-circles", (event) => {
+    const handleTreeMouseEnter = (
+      event: mapboxgl.MapMouseEvent & { features?: mapboxgl.MapboxGeoJSONFeature[] },
+    ) => {
       map.getCanvas().style.cursor = routeStartPickModeRef.current
         ? "crosshair"
         : "pointer";
@@ -547,25 +696,35 @@ export default function SpicebushMap({
       onHoverTreeRef.current(treeId);
 
       popupRef.current?.remove();
+      const coordinates = tree.geometry.coordinates as [number, number];
       popupRef.current = new mapboxgl.Popup({
         closeButton: false,
         closeOnClick: false,
-        offset: 10,
+        offset: getTreePopupOffset(
+          map,
+          coordinates,
+          analysisPopupHeightRef.current,
+        ),
         className: "tree-hover-popup",
       })
-        .setLngLat(tree.geometry.coordinates)
+        .setLngLat(coordinates)
         .setHTML(`ID #${treeId}`)
         .addTo(map);
-    });
+    };
 
-    map.on("mouseleave", "spicebush-circles", () => {
+    const handleTreeMouseLeave = () => {
       map.getCanvas().style.cursor = routeStartPickModeRef.current
         ? "crosshair"
         : "";
       onHoverTreeRef.current(null);
       popupRef.current?.remove();
       popupRef.current = null;
-    });
+    };
+
+    map.on("mouseenter", TREE_CIRCLE_LAYER, handleTreeMouseEnter);
+    map.on("mouseenter", TREE_FOCUS_LAYER, handleTreeMouseEnter);
+    map.on("mouseleave", TREE_CIRCLE_LAYER, handleTreeMouseLeave);
+    map.on("mouseleave", TREE_FOCUS_LAYER, handleTreeMouseLeave);
   }, []);
 
   const addTreeLayer = useCallback((map: mapboxgl.Map) => {
@@ -595,7 +754,7 @@ export default function SpicebushMap({
     });
 
     map.addLayer({
-      id: "spicebush-circles",
+      id: TREE_CIRCLE_LAYER,
       type: "circle",
       source: "spicebush-trees",
       paint: {
@@ -627,6 +786,8 @@ export default function SpicebushMap({
     },
     [addTreeLayer, basemap, setupDrawControl],
   );
+  const initializeMapContentRef = useRef(initializeMapContent);
+  initializeMapContentRef.current = initializeMapContent;
 
   const prevBasemap = useRef<BasemapStyle | null>(null);
 
@@ -648,7 +809,7 @@ export default function SpicebushMap({
     map.doubleClickZoom.disable();
     map.on("load", () => {
       prevBasemap.current = basemap;
-      initializeMapContent(map);
+      initializeMapContentRef.current(map);
 
       const bounds = new mapboxgl.LngLatBounds();
       treesRef.current.forEach((tree) => {
@@ -679,16 +840,23 @@ export default function SpicebushMap({
       drawRef.current = null;
       prevBasemap.current = null;
       treeHandlersAttachedRef.current = false;
+      if (routeAnimFrameRef.current !== null) {
+        window.cancelAnimationFrame(routeAnimFrameRef.current);
+        routeAnimFrameRef.current = null;
+      }
       if (clickTimeoutRef.current) {
         clearTimeout(clickTimeoutRef.current);
         clickTimeoutRef.current = null;
       }
     };
-  }, [mapboxToken, basemap, initializeMapContent]);
+    // Create the map once per token. Style/content updates use separate effects.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- basemap is initial style only
+  }, [mapboxToken]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    const container = containerRef.current;
+    if (!map || !container) return;
 
     if (prevBasemap.current === null) {
       prevBasemap.current = basemap;
@@ -698,9 +866,46 @@ export default function SpicebushMap({
     if (prevBasemap.current === basemap) return;
     prevBasemap.current = basemap;
 
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    let cancelled = false;
+    let fadeInTimer: number | null = null;
+    const fadeMs = 280;
+    const startedAt = performance.now();
+
+    const reveal = () => {
+      if (cancelled) {
+        return;
+      }
+      initializeMapContentRef.current(map);
+      const elapsed = performance.now() - startedAt;
+      const wait = prefersReducedMotion ? 0 : Math.max(0, fadeMs - elapsed);
+      fadeInTimer = window.setTimeout(() => {
+        if (!cancelled) {
+          container.classList.remove("spicebush-map--style-swap");
+        }
+      }, wait);
+    };
+
+    if (!prefersReducedMotion) {
+      // Fade through black both ways (Mapbox only fades satellite raster in natively).
+      container.classList.add("spicebush-map--style-swap");
+    }
+
+    map.once("style.load", reveal);
     map.setStyle(STYLE_URLS[basemap]);
-    map.once("style.load", () => initializeMapContent(map));
-  }, [basemap, initializeMapContent]);
+
+    return () => {
+      cancelled = true;
+      if (fadeInTimer !== null) {
+        window.clearTimeout(fadeInTimer);
+      }
+      map.off("style.load", reveal);
+      container.classList.remove("spicebush-map--style-swap");
+    };
+  }, [basemap]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -728,7 +933,7 @@ export default function SpicebushMap({
       routeStartTreeId,
     );
 
-    if (selectedTreeId !== null) {
+    if (selectedTreeId !== null && flyToOnSelect) {
       const tree = trees.find((t) => t.properties.id === selectedTreeId);
       if (tree) {
         const [lng, lat] = tree.geometry.coordinates;
@@ -739,7 +944,7 @@ export default function SpicebushMap({
         });
       }
     }
-  }, [selectedTreeId, highlightedTreeId, manualExcludedIds, routeStartTreeId, trees]);
+  }, [selectedTreeId, highlightedTreeId, manualExcludedIds, routeStartTreeId, trees, flyToOnSelect]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -747,8 +952,74 @@ export default function SpicebushMap({
       return;
     }
 
-    updateRouteLayers(map);
-  }, [route, routeLine, routeStops, updateRouteLayers]);
+    cancelRouteAnimation();
+
+    const fullLine = routeLine;
+    const fullStops = routeStops;
+    const hasLine =
+      (fullLine.features[0]?.geometry.coordinates.length ?? 0) >= 2;
+
+    if (!route || !hasLine) {
+      lastAnimatedRouteRef.current = null;
+      setRouteLayerData(map, EMPTY_ROUTE_LINE, EMPTY_ROUTE_STOPS);
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    // Same route object — only refresh geometry (e.g. tree coords), don't replay.
+    if (route === lastAnimatedRouteRef.current) {
+      setRouteLayerData(map, fullLine, fullStops);
+      return;
+    }
+
+    lastAnimatedRouteRef.current = route;
+
+    if (prefersReducedMotion) {
+      setRouteLayerData(map, fullLine, fullStops);
+      return;
+    }
+
+    const durationMs = routeTraceDurationMs(route.orderedIds.length);
+    const startedAt = performance.now();
+    let completed = false;
+
+    const tick = (now: number) => {
+      const elapsed = now - startedAt;
+      const t = Math.min(1, elapsed / durationMs);
+      const eased = 1 - (1 - t) ** 2;
+      const partial = buildPartialRouteGeoJSON(fullLine, fullStops, eased);
+      setRouteLayerData(map, partial.line, partial.stops);
+
+      if (t < 1) {
+        routeAnimFrameRef.current = window.requestAnimationFrame(tick);
+      } else {
+        completed = true;
+        routeAnimFrameRef.current = null;
+        setRouteLayerData(map, fullLine, fullStops);
+      }
+    };
+
+    const initial = buildPartialRouteGeoJSON(fullLine, fullStops, 0);
+    setRouteLayerData(map, initial.line, initial.stops);
+    routeAnimFrameRef.current = window.requestAnimationFrame(tick);
+
+    return () => {
+      cancelRouteAnimation();
+      // Allow replay if this effect is cleaned up mid-trace (e.g. Strict Mode).
+      if (!completed && lastAnimatedRouteRef.current === route) {
+        lastAnimatedRouteRef.current = null;
+      }
+    };
+  }, [
+    route,
+    routeLine,
+    routeStops,
+    cancelRouteAnimation,
+    setRouteLayerData,
+  ]);
 
   useEffect(() => {
     const map = mapRef.current;

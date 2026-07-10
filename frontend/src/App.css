@@ -36,11 +36,17 @@
   flex-wrap: nowrap;
   gap: 1rem;
   padding: 0.85rem var(--overlay-inset);
-  background: #2d4a2d;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 55%),
+    linear-gradient(90deg, #243d24 0%, #2d4a2d 45%, #355635 100%);
   color: #f4f7f0;
   flex-shrink: 0;
   min-width: 0;
   container-type: inline-size;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 6px 18px rgba(20, 36, 20, 0.28);
+  z-index: 2;
 }
 
 .app-header__title {
@@ -95,13 +101,32 @@
   padding: 0.45rem 0.9rem;
   border-radius: 6px;
   font-size: 0.85rem;
-  transition: background 0.15s ease;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.15s ease;
+}
+
+.basemap-toggle button:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .basemap-toggle button.active {
   background: #f4f7f0;
   color: #2d4a2d;
   font-weight: 600;
+  box-shadow: 0 1px 4px rgba(20, 36, 20, 0.2);
+}
+
+.basemap-toggle button:active {
+  transform: scale(0.97);
+}
+
+.app-shell--centered .app-loading {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #4a5f4a;
+  animation: ui-pulse 1.4s ease-in-out infinite;
 }
 
 .app-main {
@@ -115,15 +140,29 @@
 
 .map-top-left-controls {
   position: absolute;
-  top: var(--overlay-inset);
+  top: calc(var(--overlay-inset) - 0.25rem);
   left: var(--overlay-inset);
   z-index: 2;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: flex-start;
-  gap: 0.55rem;
+  gap: 0.5rem;
   max-width: calc(100% - 2 * var(--overlay-inset));
   max-height: calc(100% - 2 * var(--overlay-inset));
+  pointer-events: none;
+}
+
+.map-top-left-controls > * {
+  pointer-events: auto;
+}
+
+.map-top-left-controls__tabs {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.5rem;
+  position: relative;
+  z-index: 4;
 }
 
 .analysis-panel__error {
@@ -138,15 +177,27 @@
 
 .map-top-controls {
   position: absolute;
-  top: var(--overlay-inset);
+  top: calc(var(--overlay-inset) - 0.25rem);
   right: var(--overlay-inset);
   z-index: 2;
   display: flex;
   align-items: flex-start;
-  flex-wrap: nowrap;
-  gap: 0.5rem;
+  justify-content: flex-end;
   max-width: calc(100% - 2 * var(--overlay-inset));
   max-height: calc(100% - 2 * var(--overlay-inset));
+}
+
+/* Stay fixed left of the Filters tab; the open panel covers this spot. */
+.map-top-controls__help {
+  position: absolute;
+  top: 0;
+  right: 5.9rem;
+  z-index: 1;
+}
+
+.map-top-controls > :not(.map-top-controls__help) {
+  position: relative;
+  z-index: 2;
 }
 
 .error-text {

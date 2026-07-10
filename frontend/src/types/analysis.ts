@@ -13,12 +13,21 @@ export interface PcaLoading {
   label: string;
   pc1: number;
   pc2: number;
+  weight_pc1?: number;
+  weight_pc2?: number;
+}
+
+export interface CorrelationMatrix {
+  variables: string[];
+  labels: string[];
+  matrix: number[][];
 }
 
 export interface PcaResult {
   points: PcaPoint[];
   loadings: PcaLoading[];
   explained_variance_ratio: number[];
+  correlation?: CorrelationMatrix;
 }
 
 export interface ConfusionMatrix {

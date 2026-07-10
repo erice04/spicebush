@@ -5,7 +5,6 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from analysis import compute_analysis
 from database import Base, engine, get_db
 from models import SavedSelection
 from schemas import (
@@ -13,6 +12,15 @@ from schemas import (
     SavedSelectionCreate,
     SavedSelectionRead,
     SavedSelectionSummary,
+    SpreadsheetPayload,
+    SpreadsheetSaveResponse,
+)
+from spreadsheet import (
+    get_or_compute_analysis,
+    load_feature_collection,
+    read_spreadsheet,
+    save_spreadsheet_and_refresh,
+    seed_database_if_empty,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -33,14 +41,62 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+def startup_seed() -> None:
+    try:
+        seeded = seed_database_if_empty()
+        print(f"Field data ready ({seeded} individuals)")
+    except Exception as exc:
+        print(f"Warning: could not seed field data: {exc}")
+
+
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
 
 
-@app.get("/api/analysis", response_model=AnalysisResponse)
+@app.get("/api/analysis")
 def get_analysis():
-    return compute_analysis()
+    try:
+        return get_or_compute_analysis()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/api/data/trees")
+def get_trees():
+    try:
+        collection = load_feature_collection()
+        if not collection["features"]:
+            raise HTTPException(status_code=404, detail="No field data in database")
+        return collection
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/api/data/spreadsheet", response_model=SpreadsheetPayload)
+def get_spreadsheet():
+    try:
+        return read_spreadsheet()
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.put("/api/data/spreadsheet", response_model=SpreadsheetSaveResponse)
+def put_spreadsheet(payload: SpreadsheetPayload):
+    try:
+        return save_spreadsheet_and_refresh(payload.rows)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save spreadsheet: {exc}",
+        ) from exc
 
 
 @app.get("/api/selections", response_model=list[SavedSelectionSummary])
