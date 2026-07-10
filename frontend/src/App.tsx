@@ -584,9 +584,10 @@ function App() {
       checkSize: 0.7,
       radius: 8,
       pad: 3,
+      headerGap: 1,
     };
-    const MIN_SCALE = 0.62;
-    const MIN_GAP_PX = 12;
+    const MIN_SCALE = 0.48;
+    const MIN_GAP_PX = 10;
 
     const applyScale = (scale: number) => {
       const s = Math.max(MIN_SCALE, Math.min(1, scale));
@@ -622,11 +623,15 @@ function App() {
         "--density-check-size",
         `${(FULL.checkSize * s).toFixed(3)}rem`,
       );
+      header.style.setProperty(
+        "--header-cluster-gap",
+        `${(FULL.headerGap * s).toFixed(3)}rem`,
+      );
     };
 
     const fitHeaderToggles = () => {
       let scale = 1;
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 12; i++) {
         applyScale(scale);
         const title = header.querySelector(
           ".app-header__title",
@@ -640,15 +645,28 @@ function App() {
         const titleRight = title.getBoundingClientRect().right;
         const togglesLeft = toggles.getBoundingClientRect().left;
         const gap = togglesLeft - titleRight;
-        if (gap >= MIN_GAP_PX) {
+        // Title flex-shrinks first, so check text overflow — not just box gap.
+        const titleOverflows = title.scrollWidth > title.clientWidth + 1;
+        if (!titleOverflows && gap >= MIN_GAP_PX) {
           break;
         }
         const togglesWidth = toggles.getBoundingClientRect().width;
         if (togglesWidth <= 0) {
           break;
         }
-        const overflow = MIN_GAP_PX - gap;
-        scale = Math.max(MIN_SCALE, scale * ((togglesWidth - overflow) / togglesWidth));
+        const overflowPx = titleOverflows
+          ? title.scrollWidth - title.clientWidth + MIN_GAP_PX
+          : MIN_GAP_PX - gap;
+        const next = scale * ((togglesWidth - overflowPx) / togglesWidth);
+        if (!Number.isFinite(next) || next >= scale) {
+          scale = Math.max(MIN_SCALE, scale * 0.92);
+        } else {
+          scale = Math.max(MIN_SCALE, next);
+        }
+        if (scale <= MIN_SCALE) {
+          applyScale(MIN_SCALE);
+          break;
+        }
       }
     };
 

@@ -337,7 +337,7 @@ function ensureFocusCircleLayer(map: mapboxgl.Map) {
     source: "spicebush-trees",
     filter: ["==", ["get", "id"], -1],
     paint: {
-      "circle-radius": isCoarsePointer() ? 11 : 7,
+      "circle-radius": isTouchUi() ? 8 : 7,
       "circle-color": "#3d7a3d",
       "circle-stroke-color": "#f4f7f0",
       "circle-stroke-width": 2,
@@ -357,10 +357,14 @@ function isActiveTreeExpression(
   ];
 }
 
-function isCoarsePointer(): boolean {
+function isTouchUi(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
   return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(pointer: coarse)").matches
+    window.matchMedia("(pointer: coarse)").matches ||
+    window.matchMedia("(hover: none)").matches ||
+    navigator.maxTouchPoints > 0
   );
 }
 
@@ -368,8 +372,8 @@ function queryTreeFeatures(
   map: mapboxgl.Map,
   point: mapboxgl.Point,
 ): mapboxgl.MapboxGeoJSONFeature[] {
-  // Exact-pixel hits miss fat-finger taps; pad the query box on touch devices.
-  const pad = isCoarsePointer() ? 24 : 10;
+  // Fat-finger hit box (~44px target on touch).
+  const pad = isTouchUi() ? 44 : 12;
   const bbox: [mapboxgl.PointLike, mapboxgl.PointLike] = [
     [point.x - pad, point.y - pad],
     [point.x + pad, point.y + pad],
@@ -405,6 +409,15 @@ function queryTreeFeatures(
     }
   }
   return [best];
+}
+
+function mapPointFromClient(
+  map: mapboxgl.Map,
+  clientX: number,
+  clientY: number,
+): mapboxgl.Point {
+  const rect = map.getContainer().getBoundingClientRect();
+  return new mapboxgl.Point(clientX - rect.left, clientY - rect.top);
 }
 
 function applyCircleStyles(
@@ -481,7 +494,7 @@ function applyCircleStyles(
   map.setPaintProperty(
     TREE_CIRCLE_LAYER,
     "circle-radius",
-    isCoarsePointer() ? 11 : 7,
+    isTouchUi() ? 8 : 7,
   );
   map.setPaintProperty(TREE_CIRCLE_LAYER, "circle-color", circleColor);
   map.setPaintProperty(TREE_CIRCLE_LAYER, "circle-opacity", [
@@ -510,7 +523,7 @@ function applyCircleStyles(
   map.setPaintProperty(
     TREE_FOCUS_LAYER,
     "circle-radius",
-    isCoarsePointer() ? 11 : 7,
+    isTouchUi() ? 8 : 7,
   );
   map.setPaintProperty(TREE_FOCUS_LAYER, "circle-color", circleColor);
   map.setPaintProperty(TREE_FOCUS_LAYER, "circle-opacity", circleOpacity);
@@ -565,6 +578,13 @@ export default function SpicebushMap({
   const isSyncingDrawRef = useRef(false);
   const treeHandlersAttachedRef = useRef(false);
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ignoreClickUntilRef = useRef(0);
+  const touchGestureRef = useRef<{
+    startX: number;
+    startY: number;
+    longPressTimer: ReturnType<typeof setTimeout> | null;
+    longPressFired: boolean;
+  } | null>(null);
   const routeAnimFrameRef = useRef<number | null>(null);
   const lastAnimatedRouteRef = useRef<ComputedRoute | null>(null);
 
@@ -760,32 +780,81 @@ export default function SpicebushMap({
 
     treeHandlersAttachedRef.current = true;
 
-    map.on("click", (event) => {
+    const drawBlocksInteraction = () => {
       const draw = drawRef.current;
-      if (draw && draw.getMode() !== "simple_select") {
+      return Boolean(draw && draw.getMode() !== "simple_select");
+    };
+
+    const treeFromPoint = (point: mapboxgl.Point) => {
+      const features = queryTreeFeatures(map, point);
+      if (features.length === 0) {
+        return null;
+      }
+      const treeId = features[0].properties?.id as number;
+      return treesRef.current.find((t) => t.properties.id === treeId) ?? null;
+    };
+
+    const selectTreeAtPoint = (point: mapboxgl.Point) => {
+      if (drawBlocksInteraction()) {
+        return false;
+      }
+      const tree = treeFromPoint(point);
+      if (!tree) {
+        return false;
+      }
+      if (routeStartPickModeRef.current) {
+        if (excludedIdsRef.current.includes(tree.properties.id)) {
+          return true;
+        }
+        onRouteStartPickRef.current(tree);
+        return true;
+      }
+      onSelectTreeRef.current(tree);
+      return true;
+    };
+
+    const toggleTreeAtPoint = (point: mapboxgl.Point) => {
+      if (drawBlocksInteraction() || routeStartPickModeRef.current) {
+        return false;
+      }
+      const tree = treeFromPoint(point);
+      if (!tree) {
+        return false;
+      }
+      onToggleTreeRef.current(tree);
+      return true;
+    };
+
+    map.on("click", (event) => {
+      // Synthetic click after a handled touch tap — ignore to avoid double work / clear.
+      if (performance.now() < ignoreClickUntilRef.current) {
         return;
       }
 
-      const features = queryTreeFeatures(map, event.point);
+      if (drawBlocksInteraction()) {
+        return;
+      }
 
-      if (features.length > 0) {
-        const feature = features[0];
-        const treeId = feature.properties?.id as number;
-        const tree = treesRef.current.find((t) => t.properties.id === treeId);
-        if (!tree) return;
+      const tree = treeFromPoint(event.point);
 
+      if (tree) {
         if (routeStartPickModeRef.current) {
-          if (excludedIdsRef.current.includes(treeId)) {
+          if (excludedIdsRef.current.includes(tree.properties.id)) {
             return;
           }
           onRouteStartPickRef.current(tree);
           return;
         }
 
+        // Touch: select immediately. Desktop: delay so dblclick can exclude.
+        if (isTouchUi()) {
+          onSelectTreeRef.current(tree);
+          return;
+        }
+
         if (clickTimeoutRef.current) {
           clearTimeout(clickTimeoutRef.current);
         }
-
         clickTimeoutRef.current = setTimeout(() => {
           onSelectTreeRef.current(tree);
           clickTimeoutRef.current = null;
@@ -801,14 +870,15 @@ export default function SpicebushMap({
     });
 
     map.on("dblclick", (event) => {
-      const draw = drawRef.current;
-      if (draw && draw.getMode() !== "simple_select") {
+      if (isTouchUi()) {
+        return;
+      }
+      if (drawBlocksInteraction()) {
         return;
       }
 
-      const features = queryTreeFeatures(map, event.point);
-
-      if (features.length === 0) {
+      const tree = treeFromPoint(event.point);
+      if (!tree) {
         return;
       }
 
@@ -819,17 +889,104 @@ export default function SpicebushMap({
         clickTimeoutRef.current = null;
       }
 
-      const feature = features[0];
-      const treeId = feature.properties?.id as number;
-      const tree = treesRef.current.find((t) => t.properties.id === treeId);
-      if (!tree) return;
-
       onToggleTreeRef.current(tree);
     });
+
+    // Mapbox Draw / delayed-click often swallows or cancels taps on phones.
+    // Handle touch directly on the canvas for reliable selection.
+    const canvas = map.getCanvas();
+    const clearTouchGesture = () => {
+      const gesture = touchGestureRef.current;
+      if (gesture?.longPressTimer) {
+        clearTimeout(gesture.longPressTimer);
+      }
+      touchGestureRef.current = null;
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1 || drawBlocksInteraction()) {
+        clearTouchGesture();
+        return;
+      }
+      const touch = event.touches[0];
+      clearTouchGesture();
+      touchGestureRef.current = {
+        startX: touch.clientX,
+        startY: touch.clientY,
+        longPressFired: false,
+        longPressTimer: setTimeout(() => {
+          const gesture = touchGestureRef.current;
+          if (!gesture) {
+            return;
+          }
+          gesture.longPressFired = true;
+          const point = mapPointFromClient(map, gesture.startX, gesture.startY);
+          if (toggleTreeAtPoint(point)) {
+            ignoreClickUntilRef.current = performance.now() + 500;
+          }
+        }, 550),
+      };
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      const gesture = touchGestureRef.current;
+      if (!gesture || event.touches.length !== 1) {
+        return;
+      }
+      const touch = event.touches[0];
+      const dx = touch.clientX - gesture.startX;
+      const dy = touch.clientY - gesture.startY;
+      if (dx * dx + dy * dy > 100) {
+        clearTouchGesture();
+      }
+    };
+
+    const onTouchEnd = (event: TouchEvent) => {
+      const gesture = touchGestureRef.current;
+      if (!gesture) {
+        return;
+      }
+      const longPressFired = gesture.longPressFired;
+      const { startX, startY } = gesture;
+      clearTouchGesture();
+
+      if (longPressFired || drawBlocksInteraction()) {
+        ignoreClickUntilRef.current = performance.now() + 500;
+        return;
+      }
+
+      const touch = event.changedTouches[0];
+      if (!touch) {
+        return;
+      }
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      if (dx * dx + dy * dy > 100) {
+        return;
+      }
+
+      const point = mapPointFromClient(map, touch.clientX, touch.clientY);
+      if (selectTreeAtPoint(point)) {
+        ignoreClickUntilRef.current = performance.now() + 500;
+        event.preventDefault();
+      }
+    };
+
+    const onTouchCancel = () => {
+      clearTouchGesture();
+    };
+
+    canvas.addEventListener("touchstart", onTouchStart, { passive: true });
+    canvas.addEventListener("touchmove", onTouchMove, { passive: true });
+    canvas.addEventListener("touchend", onTouchEnd, { passive: false });
+    canvas.addEventListener("touchcancel", onTouchCancel, { passive: true });
 
     const handleTreeMouseEnter = (
       event: mapboxgl.MapMouseEvent & { features?: mapboxgl.MapboxGeoJSONFeature[] },
     ) => {
+      if (isTouchUi()) {
+        return;
+      }
       map.getCanvas().style.cursor = routeStartPickModeRef.current
         ? "crosshair"
         : "pointer";
@@ -861,6 +1018,9 @@ export default function SpicebushMap({
     };
 
     const handleTreeMouseLeave = () => {
+      if (isTouchUi()) {
+        return;
+      }
       map.getCanvas().style.cursor = routeStartPickModeRef.current
         ? "crosshair"
         : "";
@@ -913,7 +1073,7 @@ export default function SpicebushMap({
       type: "circle",
       source: "spicebush-trees",
       paint: {
-        "circle-radius": isCoarsePointer() ? 11 : 7,
+        "circle-radius": isTouchUi() ? 8 : 7,
         "circle-color": "#3d7a3d",
         "circle-stroke-color": "#f4f7f0",
         "circle-stroke-width": 2,

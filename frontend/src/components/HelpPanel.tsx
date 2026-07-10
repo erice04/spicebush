@@ -115,8 +115,9 @@ export default function HelpPanel({
               aria-labelledby="help-tab-map"
             >
               <li>
-                <strong>Map</strong>: Hover for ID, click for details. Double-click to
-                exclude or re-include (excluded points are greyed out).
+                <strong>Map</strong>: Hover for ID, click for details. Double-click
+                (or long-press on phones) to exclude or re-include (excluded points
+                are greyed out).
               </li>
               <li>
                 <strong>Filters</strong>: Checkboxes and sliders narrow which
@@ -437,10 +438,12 @@ export default function HelpPanel({
           )}
           </div>
         </div>
-        <p className="help-panel__footnote">
-          Note: Data and Saved Filters may take a moment to load while the server
-          starts up.
-        </p>
+        {activeTab === "map" && (
+          <p className="help-panel__footnote">
+            Note: Data and Saved Filters may take a moment to load while the server
+            starts up.
+          </p>
+        )}
       </div>
     </div>,
     document.body,
