@@ -4,8 +4,8 @@
 # Setup order after Blueprint creates the services:
 # 1. Neon → copy connection string → spicebush-api DATABASE_URL
 # 2. Deploy API, note its URL (https://spicebush-api.onrender.com)
-# 3. spicebush-web: VITE_API_URL=<api url>, VITE_MAPBOX_TOKEN=<pk...> → redeploy
-# 4. spicebush-api: CORS_ORIGINS=<static site url> → redeploy API
+# 3. spicebush: VITE_API_URL=<api url>, VITE_MAPBOX_TOKEN=<pk...> → redeploy
+# 4. spicebush-api: CORS_ORIGINS=https://spicebush.onrender.com → redeploy API
 
 services:
   - type: web
@@ -23,7 +23,7 @@ services:
         sync: false
 
   - type: web
-    name: spicebush-web
+    name: spicebush
     runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
