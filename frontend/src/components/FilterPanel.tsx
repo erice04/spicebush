@@ -25,6 +25,8 @@ interface FilterPanelProps {
   manualExcludedCount: number;
   savedSelections: SavedSelectionSummary[];
   selectionApiAvailable: boolean;
+  selectionApiConnecting?: boolean;
+  selectionBusy?: boolean;
   onAttributeFiltersChange: (filters: TreeFilters) => void;
   onResetAttributes: () => void;
   onClearRegion: () => void;
@@ -46,6 +48,8 @@ export default function FilterPanel({
   manualExcludedCount,
   savedSelections,
   selectionApiAvailable,
+  selectionApiConnecting = false,
+  selectionBusy = false,
   onAttributeFiltersChange,
   onResetAttributes,
   onClearRegion,
@@ -311,6 +315,17 @@ export default function FilterPanel({
 
       <fieldset className="filter-panel__group">
         <legend>Saved filters</legend>
+        {(selectionApiConnecting || selectionBusy) && (
+          <p className="filter-panel__api-status">
+            <span className="ui-spinner" aria-hidden="true" />
+            {selectionBusy ? "Working…" : "Waking server…"}
+          </p>
+        )}
+        {!selectionApiConnecting && !selectionApiAvailable && (
+          <p className="filter-panel__api-status filter-panel__api-status--muted">
+            Server unavailable — save/load disabled.
+          </p>
+        )}
         <div className="filter-panel__save-row">
           <input
             type="text"
@@ -319,18 +334,23 @@ export default function FilterPanel({
             onChange={(event) => setSaveName(event.target.value)}
             placeholder="Name…"
             maxLength={120}
-            disabled={!selectionApiAvailable}
+            disabled={!selectionApiAvailable || selectionBusy}
             aria-label="Saved filter name"
           />
           <button
             type="button"
             className="filter-panel__save"
-            disabled={!selectionApiAvailable || !saveName.trim()}
+            disabled={
+              !selectionApiAvailable || selectionBusy || !saveName.trim()
+            }
             onClick={() => {
               onSaveSelection(saveName.trim());
               setSaveName("");
             }}
           >
+            {selectionBusy ? (
+              <span className="ui-spinner" aria-hidden="true" />
+            ) : null}
             Save
           </button>
         </div>
@@ -340,7 +360,7 @@ export default function FilterPanel({
               className="filter-panel__select"
               value={loadSelectionId}
               onChange={(event) => setLoadSelectionId(event.target.value)}
-              disabled={!selectionApiAvailable}
+              disabled={!selectionApiAvailable || selectionBusy}
               aria-label="Saved filters"
             >
               <option value="">Load…</option>
@@ -355,6 +375,7 @@ export default function FilterPanel({
               className="filter-panel__load"
               disabled={
                 !selectionApiAvailable ||
+                selectionBusy ||
                 !loadSelectionId ||
                 loadSelectionId === loadedSelectionId
               }
@@ -368,7 +389,9 @@ export default function FilterPanel({
             <button
               type="button"
               className="filter-panel__delete"
-              disabled={!selectionApiAvailable || !loadSelectionId}
+              disabled={
+                !selectionApiAvailable || selectionBusy || !loadSelectionId
+              }
               onClick={() => {
                 const id = Number(loadSelectionId);
                 onDeleteSelection(id);

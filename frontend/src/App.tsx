@@ -20,6 +20,7 @@ import {
   type SavedSelectionSummary,
 } from "./api/selections";
 import { getAnalysis, getBundledAnalysis } from "./api/analysis";
+import { checkApiHealth } from "./api/health";
 import { getTrees } from "./api/spreadsheet";
 import type { AnalysisResponse } from "./types/analysis";
 import {
@@ -56,7 +57,9 @@ function App() {
   const [helpOpen, setHelpOpen] = useState(false);
   const hasOpenedHelp = useRef(false);
   const [savedSelections, setSavedSelections] = useState<SavedSelectionSummary[]>([]);
-  const [selectionApiAvailable, setSelectionApiAvailable] = useState(true);
+  const [selectionApiAvailable, setSelectionApiAvailable] = useState(false);
+  const [selectionApiConnecting, setSelectionApiConnecting] = useState(true);
+  const [selectionBusy, setSelectionBusy] = useState(false);
   const [route, setRoute] = useState<ComputedRoute | null>(null);
   const [routeActive, setRouteActive] = useState(false);
   const [routeStartTreeId, setRouteStartTreeId] = useState<number | null>(null);
@@ -146,23 +149,6 @@ function App() {
 
     async function loadTrees() {
       try {
-        const fromApi = await getTrees();
-        if (cancelled) {
-          return;
-        }
-        setTrees(fromApi.features);
-        setSelection(
-          createDefaultSelection(
-            createDefaultFilters(computeDataBounds(fromApi.features)),
-          ),
-        );
-        setLoading(false);
-        return;
-      } catch {
-        // Fall back to static JSON when the API is offline.
-      }
-
-      try {
         const res = await fetch("/data/spicebush.json");
         if (!res.ok) {
           throw new Error(`Failed to load spicebush data (${res.status})`);
@@ -184,7 +170,34 @@ function App() {
         }
         setError(err instanceof Error ? err.message : "Failed to load data");
         setLoading(false);
+        return;
       }
+
+      // Refresh from API in the background once the free tier wakes (non-blocking).
+      void getTrees()
+        .then((fromApi) => {
+          if (cancelled) {
+            return;
+          }
+          setSelectionApiConnecting(false);
+          setSelectionApiAvailable(true);
+          const nextTrees = fromApi.features;
+          const nextBounds = computeDataBounds(nextTrees);
+          setTrees(nextTrees);
+          setSelection((current) => {
+            if (!current) {
+              return createDefaultSelection(createDefaultFilters(nextBounds));
+            }
+            return {
+              ...current,
+              attributeFilters: clampFiltersToBounds(
+                current.attributeFilters,
+                nextBounds,
+              ),
+            };
+          });
+        })
+        .catch(() => undefined);
     }
 
     void loadTrees();
@@ -252,7 +265,7 @@ function App() {
     let retryTimer: number | undefined;
     let attempt = 0;
 
-    const loadSavedSelections = () => {
+    const refreshSavedSelections = () => {
       listSavedSelections()
         .then((items) => {
           if (cancelled) {
@@ -262,28 +275,48 @@ function App() {
           setSelectionApiAvailable(true);
         })
         .catch(() => {
-          if (cancelled) {
-            return;
-          }
-          setSelectionApiAvailable(false);
-          attempt += 1;
-          // Backend may still be starting; keep retrying for a bit.
-          if (attempt <= 12) {
-            retryTimer = window.setTimeout(
-              loadSavedSelections,
-              Math.min(800 * attempt, 4000),
-            );
+          if (!cancelled) {
+            setSelectionApiAvailable(false);
           }
         });
     };
 
-    loadSavedSelections();
+    const pollApi = async () => {
+      const healthy = await checkApiHealth();
+      if (cancelled) {
+        return;
+      }
+
+      if (healthy) {
+        setSelectionApiConnecting(false);
+        setSelectionApiAvailable(true);
+        refreshSavedSelections();
+        return;
+      }
+
+      setSelectionApiAvailable(false);
+      setSelectionApiConnecting(true);
+      attempt += 1;
+      if (attempt <= 30) {
+        retryTimer = window.setTimeout(
+          () => {
+            void pollApi();
+          },
+          Math.min(1000 * attempt, 4000),
+        );
+      } else {
+        setSelectionApiConnecting(false);
+      }
+    };
+
+    void pollApi();
 
     const onFocus = () => {
-      if (!cancelled) {
-        attempt = 0;
-        loadSavedSelections();
+      if (cancelled) {
+        return;
       }
+      attempt = 0;
+      void pollApi();
     };
     window.addEventListener("focus", onFocus);
 
@@ -392,10 +425,11 @@ function App() {
   };
 
   const handleSaveSelection = async (name: string) => {
-    if (!selection) {
+    if (!selection || selectionBusy) {
       return;
     }
 
+    setSelectionBusy(true);
     try {
       const saved = await saveSelection({
         name,
@@ -407,16 +441,20 @@ function App() {
         ...current.filter((item) => item.id !== saved.id),
       ]);
       setSelectionApiAvailable(true);
+      setSelectionApiConnecting(false);
     } catch {
       // Keep save UI quiet on failure; button state reflects API availability.
+    } finally {
+      setSelectionBusy(false);
     }
   };
 
   const handleLoadSelection = async (id: number) => {
-    if (!id || !bounds) {
+    if (!id || !bounds || selectionBusy) {
       return;
     }
 
+    setSelectionBusy(true);
     try {
       const saved = await getSavedSelection(id);
       setSelection((current) =>
@@ -432,12 +470,14 @@ function App() {
       setSelectedTree(null);
     } catch {
       // Quiet on failure.
+    } finally {
+      setSelectionBusy(false);
     }
   };
 
   const handleDeleteSelection = async (id: number) => {
     const item = savedSelections.find((entry) => entry.id === id);
-    if (!item) {
+    if (!item || selectionBusy) {
       return;
     }
 
@@ -445,11 +485,14 @@ function App() {
       return;
     }
 
+    setSelectionBusy(true);
     try {
       await deleteSavedSelection(id);
       setSavedSelections((current) => current.filter((entry) => entry.id !== id));
     } catch {
       // Quiet on failure.
+    } finally {
+      setSelectionBusy(false);
     }
   };
 
@@ -636,11 +679,7 @@ function App() {
   }
 
   if (loading) {
-    return (
-      <div className="app-shell app-shell--centered">
-        <p className="app-loading">Loading spicebush individuals…</p>
-      </div>
-    );
+    return null;
   }
 
   if (error) {
@@ -797,7 +836,7 @@ function App() {
                 }}
               />
             )}
-            <DataPanel />
+            <DataPanel apiConnecting={selectionApiConnecting} />
           </div>
           {analysis && analysisOpen && (
             <AnalysisPanel
@@ -847,6 +886,8 @@ function App() {
               manualExcludedCount={selection.manualExcluded.size}
               savedSelections={savedSelections}
               selectionApiAvailable={selectionApiAvailable}
+              selectionApiConnecting={selectionApiConnecting}
+              selectionBusy={selectionBusy}
               onAttributeFiltersChange={(attributeFilters) =>
                 setSelection((current) =>
                   current ? { ...current, attributeFilters } : current,

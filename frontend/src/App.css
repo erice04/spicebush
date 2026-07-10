@@ -167,6 +167,23 @@
   animation: ui-pulse 1.4s ease-in-out infinite;
 }
 
+.ui-spinner {
+  box-sizing: border-box;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid rgba(45, 74, 45, 0.25);
+  border-top-color: #2d4a2d;
+  border-radius: 50%;
+  animation: ui-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes ui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .app-main {
   position: relative;
   flex: 1;

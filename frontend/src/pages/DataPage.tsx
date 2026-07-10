@@ -581,21 +581,34 @@ export default function DataPage() {
   const loadSpreadsheet = useCallback(async () => {
     setLoading(true);
     setError(null);
-    try {
-      const payload = await getSpreadsheet();
-      setColumns(payload.columns.length > 0 ? payload.columns : [...ALL_COLUMNS]);
-      setRows(cloneRows(payload.rows));
-      setBaseline(payload);
-      setApiAvailable(true);
-    } catch (err) {
-      setApiAvailable(false);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Could not load spreadsheet (is the API running?)",
-      );
-    } finally {
-      setLoading(false);
+
+    const maxAttempts = 24;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const payload = await getSpreadsheet();
+        setColumns(
+          payload.columns.length > 0 ? payload.columns : [...ALL_COLUMNS],
+        );
+        setRows(cloneRows(payload.rows));
+        setBaseline(payload);
+        setApiAvailable(true);
+        setLoading(false);
+        return;
+      } catch (err) {
+        if (attempt >= maxAttempts) {
+          setApiAvailable(false);
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Could not load spreadsheet (is the API running?)",
+          );
+          setLoading(false);
+          return;
+        }
+        await new Promise((resolve) =>
+          window.setTimeout(resolve, Math.min(800 * attempt, 4000)),
+        );
+      }
     }
   }, []);
 
@@ -735,9 +748,14 @@ export default function DataPage() {
           <div>
             <h1>Field data</h1>
             <p className="data-page__count">
-              {loading
-                ? "Loading…"
-                : `${plantCount} plant${plantCount === 1 ? "" : "s"} · ${rows.length} measurement${rows.length === 1 ? "" : "s"}`}
+              {loading ? (
+                <span className="data-page__waking">
+                  <span className="ui-spinner" aria-hidden="true" />
+                  Waking server…
+                </span>
+              ) : (
+                `${plantCount} plant${plantCount === 1 ? "" : "s"} · ${rows.length} measurement${rows.length === 1 ? "" : "s"}`
+              )}
               {dirty ? " · unsaved changes" : ""}
             </p>
           </div>
@@ -840,7 +858,12 @@ export default function DataPage() {
         )}
 
         <div className="data-page__table-wrap">
-          {visibleGroups.length > 0 ? (
+          {loading ? (
+            <p className="data-panel__empty data-page__loading-panel">
+              <span className="ui-spinner" aria-hidden="true" />
+              Waking free-tier server… this can take up to a minute.
+            </p>
+          ) : visibleGroups.length > 0 ? (
             <table className="data-panel__table data-panel__table--fit data-page__sheet">
               <thead>
                 <tr>
@@ -1116,7 +1139,7 @@ export default function DataPage() {
                   ? searchQuery.trim()
                     ? "No rows match that search."
                     : "No plants loaded."
-                  : "API unavailable. Start the backend on port 8000."}
+                  : "API unavailable. The free-tier server may be asleep — try Reload."}
               </p>
             )
           )}

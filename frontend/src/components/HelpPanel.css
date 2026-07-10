@@ -44,7 +44,7 @@
   width: min(32rem, 100%);
   height: min(36.5rem, calc(100vh - 2 * var(--overlay-inset, 1.25rem)));
   overflow: hidden;
-  padding: 1.1rem 1.25rem;
+  padding: 1.1rem 1.25rem 0.45rem;
   background: white;
   border-radius: 12px;
   box-shadow: 0 12px 40px rgba(26, 46, 26, 0.22);
@@ -155,6 +155,16 @@
   font-size: 0.78rem;
   line-height: 1.45;
   color: #4a5c4a;
+  font-style: italic;
+}
+
+.help-panel__footnote {
+  flex-shrink: 0;
+  margin: auto 0 0;
+  padding: 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: #5a6b5a;
   font-style: italic;
 }
 

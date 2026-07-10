@@ -241,6 +241,19 @@
   min-width: 0;
 }
 
+.filter-panel__api-status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  color: #3d5a3d;
+}
+
+.filter-panel__api-status--muted {
+  color: #6a7a6a;
+}
+
 .filter-panel__save-row {
   margin-bottom: 0.55rem;
 }
@@ -250,6 +263,10 @@
 }
 
 .filter-panel__save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
   width: auto;
   margin-bottom: 0;
 }

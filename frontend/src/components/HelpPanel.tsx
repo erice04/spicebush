@@ -437,6 +437,10 @@ export default function HelpPanel({
           )}
           </div>
         </div>
+        <p className="help-panel__footnote">
+          Note: Data and Saved filters may take a moment to load while the server
+          starts up.
+        </p>
       </div>
     </div>,
     document.body,
