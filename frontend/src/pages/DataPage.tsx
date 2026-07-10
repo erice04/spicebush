@@ -749,9 +749,8 @@ export default function DataPage() {
             <h1>Field data</h1>
             <p className="data-page__count">
               {loading ? (
-                <span className="data-page__waking">
+                <span className="data-page__waking" aria-label="Loading">
                   <span className="ui-spinner" aria-hidden="true" />
-                  Waking server…
                 </span>
               ) : (
                 `${plantCount} plant${plantCount === 1 ? "" : "s"} · ${rows.length} measurement${rows.length === 1 ? "" : "s"}`
@@ -859,9 +858,8 @@ export default function DataPage() {
 
         <div className="data-page__table-wrap">
           {loading ? (
-            <p className="data-panel__empty data-page__loading-panel">
+            <p className="data-panel__empty data-page__loading-panel" aria-label="Loading">
               <span className="ui-spinner" aria-hidden="true" />
-              Waking free-tier server… this can take up to a minute.
             </p>
           ) : visibleGroups.length > 0 ? (
             <table className="data-panel__table data-panel__table--fit data-page__sheet">

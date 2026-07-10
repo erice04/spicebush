@@ -525,7 +525,7 @@ export default function PcaBiplot({
   );
 
   const uncertainLegendItem = (
-    <span className="pca-biplot__legend-item">
+    <span className="pca-biplot__legend-item pca-biplot__legend-item--uncertain">
       <span className="pca-biplot__legend-symbol" aria-hidden="true">
         <span
           className="pca-biplot__marker pca-biplot__marker--plus"

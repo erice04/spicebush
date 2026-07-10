@@ -12,12 +12,8 @@ export default function DataPanel({ apiConnecting = false }: DataPanelProps) {
       onClick={() => {
         window.open(`${window.location.origin}/data`, "_blank", "noopener,noreferrer");
       }}
-      aria-label={
-        apiConnecting
-          ? "Open data editor (server waking)"
-          : "Open data editor in a new tab"
-      }
-      title={apiConnecting ? "Server waking…" : undefined}
+      aria-label="Open data editor in a new tab"
+      title={apiConnecting ? "Loading…" : undefined}
     >
       {apiConnecting && <span className="ui-spinner" aria-hidden="true" />}
       Data

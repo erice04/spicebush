@@ -309,15 +309,38 @@
 .pca-biplot--popup .pca-biplot__legend {
   align-items: center;
   width: 100%;
+  min-width: 0;
   font-size: calc(0.65rem * var(--pca-ui-scale));
   gap: calc(0.15rem * var(--pca-ui-scale));
   margin-top: calc(0.1rem * var(--pca-ui-scale));
+  container-type: inline-size;
+  container-name: pca-popup-legend;
 }
 
 .pca-biplot--popup .pca-biplot__legend-grid {
   width: fit-content;
+  max-width: 100%;
   margin: 0 auto;
   gap: calc(0.25rem * var(--pca-ui-scale)) calc(0.75rem * var(--pca-ui-scale));
+  /* Row 1: F | M | spacer; Row 2: Pred F | Pred M | Uncertain */
+  grid-template-columns: repeat(3, max-content);
+  justify-content: center;
+}
+
+/* Narrow popup: drop spacer so Uncertain wraps to row 3 */
+@container pca-popup-legend (max-width: 24rem) {
+  .pca-biplot--popup .pca-biplot__legend-grid {
+    grid-template-columns: repeat(2, max-content);
+  }
+
+  .pca-biplot--popup .pca-biplot__legend-item--spacer {
+    display: none;
+  }
+
+  .pca-biplot--popup .pca-biplot__legend-item--uncertain {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
 }
 
 .pca-biplot--popup .pca-biplot__legend-item {

@@ -49,6 +49,14 @@
     0 1px 0 rgba(255, 255, 255, 0.08) inset,
     0 6px 18px rgba(20, 36, 20, 0.28);
   z-index: 2;
+  --header-toggle-font: 0.85rem;
+  --header-toggle-pad-y: 0.45rem;
+  --header-toggle-pad-x: 0.9rem;
+  --header-toggle-gap: 1.35rem;
+  --header-toggle-radius: 8px;
+  --header-toggle-pad: 3px;
+  --density-check-font: 0.7rem;
+  --density-check-size: 0.7rem;
 }
 
 .app-header__title {
@@ -79,8 +87,8 @@
   display: inline-flex;
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  padding: 3px;
+  border-radius: var(--header-toggle-radius, 8px);
+  padding: var(--header-toggle-pad, 3px);
   gap: 2px;
 }
 
@@ -88,7 +96,7 @@
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 1.35rem;
+  gap: var(--header-toggle-gap, 1.35rem);
 }
 
 .density-controls {
@@ -104,7 +112,7 @@
   gap: 0.28rem;
   margin: 0;
   color: rgba(244, 247, 240, 0.88);
-  font-size: 0.7rem;
+  font-size: var(--density-check-font, 0.7rem);
   font-weight: 500;
   letter-spacing: 0.01em;
   cursor: pointer;
@@ -113,8 +121,8 @@
 }
 
 .density-points-check input {
-  width: 0.7rem;
-  height: 0.7rem;
+  width: var(--density-check-size, 0.7rem);
+  height: var(--density-check-size, 0.7rem);
   margin: 0;
   accent-color: #f4f7f0;
   cursor: pointer;
@@ -136,9 +144,9 @@
   border: none;
   background: transparent;
   color: #f4f7f0;
-  padding: 0.45rem 0.9rem;
+  padding: var(--header-toggle-pad-y, 0.45rem) var(--header-toggle-pad-x, 0.9rem);
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: var(--header-toggle-font, 0.85rem);
   transition:
     background 0.18s ease,
     color 0.18s ease,

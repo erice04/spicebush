@@ -161,7 +161,7 @@
 .help-panel__footnote {
   flex-shrink: 0;
   margin: auto 0 0;
-  padding: 0;
+  padding: 0.55rem 0 0;
   font-size: 0.72rem;
   line-height: 1.4;
   color: #5a6b5a;

@@ -337,7 +337,7 @@ function ensureFocusCircleLayer(map: mapboxgl.Map) {
     source: "spicebush-trees",
     filter: ["==", ["get", "id"], -1],
     paint: {
-      "circle-radius": 7,
+      "circle-radius": isCoarsePointer() ? 11 : 7,
       "circle-color": "#3d7a3d",
       "circle-stroke-color": "#f4f7f0",
       "circle-stroke-width": 2,
@@ -357,22 +357,54 @@ function isActiveTreeExpression(
   ];
 }
 
+function isCoarsePointer(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(pointer: coarse)").matches
+  );
+}
+
 function queryTreeFeatures(
   map: mapboxgl.Map,
-  point: mapboxgl.PointLike,
+  point: mapboxgl.Point,
 ): mapboxgl.MapboxGeoJSONFeature[] {
-  if (map.getLayer(TREE_FOCUS_LAYER)) {
-    const focused = map.queryRenderedFeatures(point, {
-      layers: [TREE_FOCUS_LAYER],
-    });
-    if (focused.length > 0) {
-      return focused;
-    }
+  // Exact-pixel hits miss fat-finger taps; pad the query box on touch devices.
+  const pad = isCoarsePointer() ? 24 : 10;
+  const bbox: [mapboxgl.PointLike, mapboxgl.PointLike] = [
+    [point.x - pad, point.y - pad],
+    [point.x + pad, point.y + pad],
+  ];
+
+  const layers = [
+    ...(map.getLayer(TREE_FOCUS_LAYER) ? [TREE_FOCUS_LAYER] : []),
+    ...(map.getLayer(TREE_CIRCLE_LAYER) ? [TREE_CIRCLE_LAYER] : []),
+  ];
+  if (layers.length === 0) {
+    return [];
   }
 
-  return map.queryRenderedFeatures(point, {
-    layers: [TREE_CIRCLE_LAYER],
-  });
+  const features = map.queryRenderedFeatures(bbox, { layers });
+  if (features.length <= 1) {
+    return features;
+  }
+
+  let best = features[0];
+  let bestDist = Number.POSITIVE_INFINITY;
+  for (const feature of features) {
+    if (feature.geometry.type !== "Point") {
+      continue;
+    }
+    const projected = map.project(
+      feature.geometry.coordinates as [number, number],
+    );
+    const dist =
+      (projected.x - point.x) ** 2 + (projected.y - point.y) ** 2;
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = feature;
+    }
+  }
+  return [best];
 }
 
 function applyCircleStyles(
@@ -446,7 +478,11 @@ function applyCircleStyles(
     2,
   ];
 
-  map.setPaintProperty(TREE_CIRCLE_LAYER, "circle-radius", 7);
+  map.setPaintProperty(
+    TREE_CIRCLE_LAYER,
+    "circle-radius",
+    isCoarsePointer() ? 11 : 7,
+  );
   map.setPaintProperty(TREE_CIRCLE_LAYER, "circle-color", circleColor);
   map.setPaintProperty(TREE_CIRCLE_LAYER, "circle-opacity", [
     "case",
@@ -471,7 +507,11 @@ function applyCircleStyles(
       : ["==", ["get", "id"], -1],
   );
 
-  map.setPaintProperty(TREE_FOCUS_LAYER, "circle-radius", 7);
+  map.setPaintProperty(
+    TREE_FOCUS_LAYER,
+    "circle-radius",
+    isCoarsePointer() ? 11 : 7,
+  );
   map.setPaintProperty(TREE_FOCUS_LAYER, "circle-color", circleColor);
   map.setPaintProperty(TREE_FOCUS_LAYER, "circle-opacity", circleOpacity);
   map.setPaintProperty(TREE_FOCUS_LAYER, "circle-stroke-color", circleStrokeColor);
@@ -873,7 +913,7 @@ export default function SpicebushMap({
       type: "circle",
       source: "spicebush-trees",
       paint: {
-        "circle-radius": 7,
+        "circle-radius": isCoarsePointer() ? 11 : 7,
         "circle-color": "#3d7a3d",
         "circle-stroke-color": "#f4f7f0",
         "circle-stroke-width": 2,

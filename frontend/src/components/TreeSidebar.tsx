@@ -469,7 +469,7 @@ function TreeSidebarCard({
             </dd>
           </div>
           <div>
-            <dt>Base diameter</dt>
+            <dt>Base Diam.</dt>
             <dd>
               {formatMeasurement(view.base_diameter_cm, "cm")}
               {baseGrowth && (

@@ -141,7 +141,7 @@ export default function HelpPanel({
                 measurements, then Save to update the map and analysis.
               </li>
               <li>
-                <strong>Saved filters</strong>: Save your current checkbox, slider, and
+                <strong>Saved Filters</strong>: Save your current checkbox, slider, and
                 selection-tool settings under a name. Choose one from the list and click
                 Load to apply it. Manual double-click exclusions are not saved.
               </li>
@@ -438,7 +438,7 @@ export default function HelpPanel({
           </div>
         </div>
         <p className="help-panel__footnote">
-          Note: Data and Saved filters may take a moment to load while the server
+          Note: Data and Saved Filters may take a moment to load while the server
           starts up.
         </p>
       </div>

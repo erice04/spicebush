@@ -79,6 +79,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const appMainRef = useRef<HTMLElement>(null);
+  const appHeaderRef = useRef<HTMLElement>(null);
 
   const bounds = useMemo(
     () => (trees.length > 0 ? computeDataBounds(trees) : null),
@@ -569,6 +570,102 @@ function App() {
     if (loading || error || !mapboxToken) {
       return;
     }
+    const header = appHeaderRef.current;
+    if (!header) {
+      return;
+    }
+
+    const FULL = {
+      font: 0.85,
+      padY: 0.45,
+      padX: 0.9,
+      gap: 1.35,
+      checkFont: 0.7,
+      checkSize: 0.7,
+      radius: 8,
+      pad: 3,
+    };
+    const MIN_SCALE = 0.62;
+    const MIN_GAP_PX = 12;
+
+    const applyScale = (scale: number) => {
+      const s = Math.max(MIN_SCALE, Math.min(1, scale));
+      header.style.setProperty(
+        "--header-toggle-font",
+        `${(FULL.font * s).toFixed(3)}rem`,
+      );
+      header.style.setProperty(
+        "--header-toggle-pad-y",
+        `${(FULL.padY * s).toFixed(3)}rem`,
+      );
+      header.style.setProperty(
+        "--header-toggle-pad-x",
+        `${(FULL.padX * s).toFixed(3)}rem`,
+      );
+      header.style.setProperty(
+        "--header-toggle-gap",
+        `${(FULL.gap * s).toFixed(3)}rem`,
+      );
+      header.style.setProperty(
+        "--header-toggle-radius",
+        `${(FULL.radius * s).toFixed(2)}px`,
+      );
+      header.style.setProperty(
+        "--header-toggle-pad",
+        `${Math.max(2, FULL.pad * s).toFixed(2)}px`,
+      );
+      header.style.setProperty(
+        "--density-check-font",
+        `${(FULL.checkFont * s).toFixed(3)}rem`,
+      );
+      header.style.setProperty(
+        "--density-check-size",
+        `${(FULL.checkSize * s).toFixed(3)}rem`,
+      );
+    };
+
+    const fitHeaderToggles = () => {
+      let scale = 1;
+      for (let i = 0; i < 8; i++) {
+        applyScale(scale);
+        const title = header.querySelector(
+          ".app-header__title",
+        ) as HTMLElement | null;
+        const toggles = header.querySelector(
+          ".app-header__toggles",
+        ) as HTMLElement | null;
+        if (!title || !toggles) {
+          break;
+        }
+        const titleRight = title.getBoundingClientRect().right;
+        const togglesLeft = toggles.getBoundingClientRect().left;
+        const gap = togglesLeft - titleRight;
+        if (gap >= MIN_GAP_PX) {
+          break;
+        }
+        const togglesWidth = toggles.getBoundingClientRect().width;
+        if (togglesWidth <= 0) {
+          break;
+        }
+        const overflow = MIN_GAP_PX - gap;
+        scale = Math.max(MIN_SCALE, scale * ((togglesWidth - overflow) / togglesWidth));
+      }
+    };
+
+    fitHeaderToggles();
+    const observer = new ResizeObserver(() => fitHeaderToggles());
+    observer.observe(header);
+    window.addEventListener("resize", fitHeaderToggles);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", fitHeaderToggles);
+    };
+  }, [loading, error, mapboxToken, densityHeatmap]);
+
+  useLayoutEffect(() => {
+    if (loading || error || !mapboxToken) {
+      return;
+    }
     const main = appMainRef.current;
     if (!main) return;
 
@@ -696,7 +793,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="app-header">
+      <header className="app-header" ref={appHeaderRef}>
         <div className="app-header__title">
           <h1>
             Spicebush{" "}

@@ -182,7 +182,7 @@
   display: flex;
   align-items: center;
   gap: 1.35rem;
-  flex-shrink: 1;
+  flex-shrink: 0;
   min-width: 0;
 }
 
@@ -200,8 +200,7 @@
   padding: 0.15rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.1);
-  flex-shrink: 1;
-  min-width: 0;
+  flex-shrink: 0;
 }
 
 .analysis-page__depth-pill {
@@ -286,32 +285,54 @@
   }
 
   .analysis-page__header-actions {
-    gap: 0.75rem;
+    gap: 0.9rem;
   }
 
   .analysis-page__depth {
-    padding: 0.1rem;
+    padding: 0.12rem;
   }
 
   .analysis-page__depth-btn {
-    font-size: 0.68rem;
-    padding: 0.32rem 0.5rem;
+    font-size: 0.8rem;
+    padding: 0.42rem 0.72rem;
   }
 
   .analysis-page__minimize,
   .analysis-page__close {
-    width: 1.35rem;
-    height: 1.35rem;
+    width: 1.55rem;
+    height: 1.55rem;
     aspect-ratio: 1;
     line-height: 1;
   }
 
   .analysis-page__minimize {
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
 
   .analysis-page__close {
-    font-size: 1rem;
+    font-size: 1.1rem;
+  }
+}
+
+@container analysis-header (max-width: 22rem) {
+  .analysis-page__header-actions {
+    gap: 0.65rem;
+  }
+
+  .analysis-page__depth-btn {
+    font-size: 0.74rem;
+    padding: 0.38rem 0.58rem;
+  }
+
+  .analysis-page__minimize,
+  .analysis-page__close {
+    width: 1.45rem;
+    height: 1.45rem;
+  }
+
+  .analysis-page__minimize,
+  .analysis-page__close {
+    font-size: 1.05rem;
   }
 }
 
@@ -583,15 +604,48 @@
   .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:last-child {
     flex: 48 1 0;
     min-height: 0;
-    overflow-y: auto;
+    overflow: hidden;
     overscroll-behavior: contain;
     padding: var(--analysis-card-pad-y) var(--analysis-card-pad-x);
+    container-type: size;
+    container-name: brief-snapshot;
+    display: flex;
+    flex-direction: column;
   }
 
-  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:first-child .analysis-page__tech-list,
-  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:last-child .analysis-page__card-lead,
-  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:last-child .analysis-panel__matrix {
+  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:first-child .analysis-page__tech-list {
     flex-shrink: 0;
+  }
+
+  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:last-child .analysis-page__card-title {
+    flex-shrink: 0;
+  }
+
+  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:last-child .analysis-page__card-lead {
+    flex-shrink: 1;
+    min-height: 0;
+    overflow: hidden;
+    font-size: clamp(0.68rem, 0.55rem + 2.2cqh, 0.82rem);
+    line-height: 1.35;
+  }
+
+  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:last-child .analysis-panel__matrix {
+    flex: 0 1 auto;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 0.25rem;
+    font-size: clamp(0.58rem, 0.45rem + 2.8cqh, 0.78rem);
+  }
+
+  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:last-child .analysis-panel__matrix caption {
+    font-size: clamp(0.56rem, 0.42rem + 2.4cqh, 0.76rem);
+    margin-bottom: 0.12rem;
+    white-space: normal;
+  }
+
+  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:last-child .analysis-panel__matrix th,
+  .analysis-page__scroll--brief .analysis-page__details > .analysis-page__card:last-child .analysis-panel__matrix td {
+    padding: clamp(0.1rem, 0.7cqh, 0.26rem) clamp(0.12rem, 1.1cqi, 0.35rem);
   }
 
   .analysis-page__scroll--technical .analysis-page__details {
@@ -727,12 +781,13 @@
 
 .analysis-page__scroll--brief .analysis-panel__matrix {
   width: min(100%, 21rem);
+  max-width: 100%;
   table-layout: fixed;
   margin-top: 0.3rem;
   margin-bottom: 0;
   margin-inline: auto;
   font-size: 0.78rem;
-  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .analysis-page__scroll--brief .analysis-panel__matrix caption {

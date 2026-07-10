@@ -314,11 +314,10 @@ export default function FilterPanel({
       </div>
 
       <fieldset className="filter-panel__group">
-        <legend>Saved filters</legend>
-        {(selectionApiConnecting || selectionBusy) && (
-          <p className="filter-panel__api-status">
+        <legend>Saved Filters</legend>
+        {selectionApiConnecting && (
+          <p className="filter-panel__api-status" aria-label="Loading">
             <span className="ui-spinner" aria-hidden="true" />
-            {selectionBusy ? "Working…" : "Waking server…"}
           </p>
         )}
         {!selectionApiConnecting && !selectionApiAvailable && (
@@ -361,7 +360,7 @@ export default function FilterPanel({
               value={loadSelectionId}
               onChange={(event) => setLoadSelectionId(event.target.value)}
               disabled={!selectionApiAvailable || selectionBusy}
-              aria-label="Saved filters"
+              aria-label="Saved Filters"
             >
               <option value="">Load…</option>
               {savedSelections.map((item) => (
