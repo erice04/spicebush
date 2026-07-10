@@ -11,5 +11,3 @@ frontend/.env.local
 *.pem
 *.key
 id_rsa*
-Spicebush-Interview-Prep.md
-Spicebush-Interview-Prep.docx
