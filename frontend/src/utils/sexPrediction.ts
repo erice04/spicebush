@@ -1,9 +1,7 @@
 import type { PredictedSexCategory } from "../types";
 
-export const UNCERTAIN_PROB_LOW = 0.3;
-export const UNCERTAIN_PROB_HIGH = 0.7;
-
-export type { PredictedSexCategory };
+const UNCERTAIN_PROB_LOW = 0.3;
+const UNCERTAIN_PROB_HIGH = 0.7;
 
 export function isUncertainPrediction(
   probabilityFemale: number | null | undefined,

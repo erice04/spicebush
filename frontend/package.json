@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview",
-    "process-data": "python ../scripts/process_data.py && copy ..\\data\\spicebush.json public\\data\\spicebush.json && python ../scripts/generate_analysis.py"
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@types/d3": "^7.4.3",

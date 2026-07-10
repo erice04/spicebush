@@ -1,17 +1,3 @@
-.data-panel {
-  width: min(52rem, calc(100vw - 2 * var(--overlay-inset) - 3rem));
-  max-height: calc(100dvh - 4.75rem - 2 * var(--overlay-inset));
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 0.85rem 0.95rem;
-  background: rgba(255, 255, 255, 0.97);
-  border-radius: 12px;
-  box-shadow: 0 8px 28px rgba(26, 46, 26, 0.18);
-  backdrop-filter: blur(6px);
-  box-sizing: border-box;
-}
-
 .data-panel__tab {
   flex-shrink: 0;
   border: 1px solid #d4dcc8;
@@ -36,36 +22,6 @@
 
 .data-panel__tab:active {
   transform: scale(0.97);
-}
-
-.data-panel__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.65rem;
-  flex-shrink: 0;
-}
-
-.data-panel__header h2 {
-  margin: 0;
-  font-size: 1.05rem;
-  color: #2d4a2d;
-}
-
-.data-panel__count {
-  margin: 0.2rem 0 0;
-  font-size: 0.78rem;
-  color: #6b7f6b;
-}
-
-.data-panel__header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  flex-shrink: 0;
-  flex-wrap: wrap;
-  justify-content: flex-end;
 }
 
 .data-panel__btn {
@@ -98,31 +54,6 @@
   background: #346834;
 }
 
-.data-panel__collapse {
-  box-sizing: border-box;
-  display: inline-grid;
-  place-items: center;
-  width: 1.4rem;
-  height: 1.4rem;
-  aspect-ratio: 1;
-  padding: 0;
-  border: 1px solid #d4dcc8;
-  border-radius: 6px;
-  background: #eef3e8;
-  color: #2d4a2d;
-  font-size: 1.1rem;
-  font-weight: 400;
-  line-height: 1;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.data-panel__collapse:hover {
-  background: #e4ebdc;
-  border-color: #b7c6b0;
-  color: #1a2e1a;
-}
-
 .data-panel__error {
   margin: 0 0 0.55rem;
   padding: 0.4rem 0.55rem;
@@ -137,15 +68,6 @@
   margin: 0.5rem 0;
   color: #6b7f6b;
   font-size: 0.8rem;
-}
-
-.data-panel__table-wrap {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  border: 1px solid #d7e2d7;
-  border-radius: 8px;
-  background: #fff;
 }
 
 .data-panel__table {
@@ -237,21 +159,6 @@
 .data-panel__row-delete:disabled {
   opacity: 0.4;
   cursor: default;
-}
-
-@media (max-width: 700px) {
-  .data-panel {
-    width: min(100vw - 2 * var(--overlay-inset), 100%);
-  }
-
-  .data-panel__header {
-    flex-direction: column;
-  }
-
-  .data-panel__header-actions {
-    width: 100%;
-    justify-content: flex-start;
-  }
 }
 
 .data-page {

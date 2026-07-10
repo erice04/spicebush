@@ -190,22 +190,6 @@
   box-sizing: border-box;
 }
 
-.filter-panel__region-help {
-  margin: 0 0 0.55rem;
-  font-size: 0.74rem;
-  line-height: 1.45;
-  color: #4a5c4a;
-}
-
-.filter-panel__clear-region {
-  border: none;
-  background: #3d7a3d;
-  color: #f4f7f0;
-  padding: 0.4rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.78rem;
-}
-
 .filter-panel__save,
 .filter-panel__load,
 .filter-panel__delete {
@@ -281,21 +265,6 @@
 .filter-panel__select:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-}
-
-.filter-panel__empty-saved,
-.filter-panel__message {
-  margin: 0.45rem 0 0;
-  font-size: 0.72rem;
-  color: #6b7f6b;
-}
-
-.filter-panel__message {
-  color: #2d4a2d;
-}
-
-.filter-panel__clear-region:hover {
-  background: #2d4a2d;
 }
 
 .filter-panel__group {
@@ -383,11 +352,6 @@
   accent-color: #3d7a3d;
 }
 
-.filter-panel__hint {
-  color: #6b7f6b;
-  font-size: 0.75rem;
-}
-
 .filter-panel__sliders {
   display: flex;
   flex-direction: column;
@@ -401,10 +365,6 @@
 .filter-panel__sliders .range-slider__track,
 .filter-panel__sliders .range-slider__thumb {
   height: 1rem;
-}
-
-.filter-panel__note {
-  display: none;
 }
 
 .filter-panel__tab:hover {
@@ -502,11 +462,6 @@
     font-size: 0.7rem;
   }
 
-  .filter-panel__empty-saved,
-  .filter-panel__message {
-    font-size: 0.68rem;
-    margin-top: 0.35rem;
-  }
 }
 
 @media (max-height: 600px) {
@@ -560,11 +515,6 @@
     flex-basis: 100%;
   }
 
-  .filter-panel__empty-saved,
-  .filter-panel__message {
-    font-size: 0.64rem;
-    margin-top: 0.25rem;
-  }
 }
 
 @media (max-width: 520px) {

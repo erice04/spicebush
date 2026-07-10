@@ -291,18 +291,6 @@ def read_xlsx_rows(path: Path = XLSX_PATH) -> list[dict[str, Any]]:
     return rows
 
 
-def _measurement_dict(item: FieldMeasurement) -> dict[str, Any]:
-    return {
-        "observed_ym": item.observed_ym,
-        "stem_count": item.stem_count,
-        "base_diameter_cm": item.base_diameter_cm,
-        "dbh_cm": item.dbh_cm,
-        "height_m": item.height_m,
-        "sex": item.sex,
-        "notes": item.notes,
-    }
-
-
 def _row_from_plant_and_measurement(
     plant: FieldPlant,
     measurement: FieldMeasurement,

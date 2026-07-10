@@ -429,19 +429,3 @@ export function routeTraceDurationMs(stopCount: number): number {
   const segments = Math.max(1, stopCount - 1);
   return Math.min(4200, Math.max(900, 700 + segments * 160));
 }
-
-export function routeMatchesVisibleSet(
-  route: ComputedRoute | null,
-  visibleIds: number[],
-): boolean {
-  if (!route) {
-    return true;
-  }
-
-  if (route.orderedIds.length !== visibleIds.length) {
-    return false;
-  }
-
-  const visibleSet = new Set(visibleIds);
-  return route.orderedIds.every((id) => visibleSet.has(id));
-}

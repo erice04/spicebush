@@ -244,13 +244,6 @@
   object-position: center center;
 }
 
-.help-panel__caption-note {
-  margin: 0.55rem 0 0;
-  font-size: 0.72rem;
-  line-height: 1.4;
-  color: #6b7f6b;
-}
-
 @media (max-width: 520px) {
   .help-panel__gallery--grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

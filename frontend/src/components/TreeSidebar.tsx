@@ -4,7 +4,7 @@ import { formatSex, formatStemCount } from "../utils/labels";
 import { useCloseAnimation } from "../hooks/useCloseAnimation";
 import "./TreeSidebar.css";
 
-export interface SexPredictionInfo {
+interface SexPredictionInfo {
   probabilityFemale: number;
   predictedSex: "F" | "M";
   uncertain: boolean;

@@ -37,8 +37,6 @@ function isPredictedPoint(point: PcaPoint): boolean {
   return !point.sex_known;
 }
 
-export { isUncertainPrediction };
-
 function pointColor(
   sex: string | null,
   sexKnown: boolean,
