@@ -1,12 +1,18 @@
 .data-panel__tab {
+  box-sizing: border-box;
   flex-shrink: 0;
+  height: var(--map-control-btn-height, 2.7rem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid #d4dcc8;
   background: rgba(255, 255, 255, 0.96);
   color: #2d4a2d;
-  padding: 0.55rem 0.9rem;
+  padding: 0 var(--map-control-btn-pad-x, 1.05rem);
   border-radius: 999px;
-  font-size: 0.85rem;
+  font-size: var(--map-control-btn-font, 0.95rem);
   font-weight: 600;
+  line-height: 1;
   box-shadow: 0 4px 16px rgba(26, 46, 26, 0.15);
   backdrop-filter: blur(6px);
   cursor: pointer;
@@ -167,7 +173,7 @@
   width: 100%;
   height: 100%;
   min-height: 0;
-  padding: 1rem 1.25rem;
+  padding: 1rem 4rem;
   box-sizing: border-box;
   background: #f4f7f0;
   animation: ui-fade-in 0.18s ease;
@@ -175,11 +181,11 @@
 
 .data-page__header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin: -1rem -1.25rem 0.75rem;
-  padding: 0.85rem 1.25rem;
+  margin: -1rem -4rem 0.75rem;
+  padding: 0.85rem 4rem;
   flex-shrink: 0;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 55%),
@@ -360,18 +366,28 @@
 .data-page__sheet.data-panel__table--fit th.data-plant__notes-col,
 .data-page__sheet.data-panel__table--fit td.data-plant__notes-col {
   width: auto;
-  min-width: 12ch;
+  min-width: 10ch;
   white-space: normal;
   text-align: left;
 }
 
 .data-page__sheet .data-plant__notes-col .data-panel__cell {
   width: 100%;
-  min-width: 12ch;
+  min-width: 10ch;
   box-sizing: border-box;
   text-align: left;
   margin-left: 0;
   margin-right: 0;
+}
+
+.data-page__sheet thead th:not(.data-panel__actions-col):not(.data-plant__add-col) {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.data-page__sheet .data-panel__cell {
+  padding-left: 0.4rem;
+  padding-right: 0.4rem;
 }
 
 .data-page__sheet .data-plant__main-row td:nth-child(-n + 3) {
@@ -453,14 +469,14 @@
 
 .data-page__sheet .data-plant__sub-row .data-panel__cell {
   font-size: 0.68rem;
-  padding: 0.2rem 0.28rem;
+  padding: 0.2rem 0.4rem;
   color: #2a3d2a;
 }
 
 .data-page__sheet .data-plant__main-row td:nth-child(n + 4) .data-panel__cell {
   font-weight: 400;
   font-size: 0.68rem;
-  padding: 0.2rem 0.28rem;
+  padding: 0.2rem 0.4rem;
   color: #2a3d2a;
 }
 

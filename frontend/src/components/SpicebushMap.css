@@ -33,7 +33,7 @@
 
 .spicebush-map .mapboxgl-ctrl-bottom-left {
   bottom: calc(var(--overlay-inset) + 1.25rem);
-  left: var(--overlay-inset);
+  left: var(--controls-inset, 1.5rem);
 }
 
 .spicebush-map .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-logo {
@@ -52,14 +52,14 @@
 }
 
 .spicebush-map .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-group {
-  width: 30px;
+  width: 38px;
   box-sizing: border-box;
 }
 
 .spicebush-map .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-group button {
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
   padding: 0;
   box-sizing: border-box;
 }
@@ -69,8 +69,8 @@
 }
 
 .spicebush-map .spicebush-map-ctrl-group .mapbox-gl-draw_ctrl-draw-btn {
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   box-sizing: border-box;
   display: block;
   padding: 0;
@@ -80,7 +80,7 @@
   border-bottom: 0;
   background-repeat: no-repeat;
   background-position: center center;
-  background-size: 20px 20px;
+  background-size: 24px 24px;
 }
 
 .spicebush-map .spicebush-map-ctrl-group button + button {

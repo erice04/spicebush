@@ -1,12 +1,16 @@
 .help-panel__fab {
+  box-sizing: border-box;
   flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
   border: 1px solid #d4dcc8;
   background: rgba(255, 255, 255, 0.96);
   color: #2d4a2d;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--map-control-btn-height, 2.7rem);
+  height: var(--map-control-btn-height, 2.7rem);
+  padding: 0;
   border-radius: 50%;
-  font-size: 1rem;
+  font-size: var(--map-control-fab-font, 1.15rem);
   font-weight: 700;
   line-height: 1;
   box-shadow: 0 4px 16px rgba(26, 46, 26, 0.15);
@@ -20,7 +24,7 @@
 .help-panel__backdrop {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  z-index: 100;
   background: rgba(26, 46, 26, 0.35);
   display: flex;
   align-items: center;
@@ -37,10 +41,10 @@
 .help-panel__dialog {
   display: flex;
   flex-direction: column;
-  width: min(28rem, 100%);
-  height: min(32rem, calc(100vh - 2 * var(--overlay-inset, 1.25rem)));
+  width: min(32rem, 100%);
+  height: min(36.5rem, calc(100vh - 2 * var(--overlay-inset, 1.25rem)));
   overflow: hidden;
-  padding: 1rem 1.1rem;
+  padding: 1.1rem 1.25rem;
   background: white;
   border-radius: 12px;
   box-shadow: 0 12px 40px rgba(26, 46, 26, 0.22);
@@ -56,7 +60,26 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding-right: 0.2rem;
+  padding-right: 0.15rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(45, 74, 45, 0.28) transparent;
+}
+
+.help-panel__body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.help-panel__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.help-panel__body::-webkit-scrollbar-thumb {
+  background-color: rgba(45, 74, 45, 0.28);
+  border-radius: 999px;
+}
+
+.help-panel__body::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(45, 74, 45, 0.42);
 }
 
 .help-panel__body strong {
@@ -78,9 +101,9 @@
   border: 1px solid #d4dcc8;
   background: rgba(255, 255, 255, 0.55);
   color: #6b7f6b;
-  padding: 0.42rem 0.35rem;
+  padding: 0.48rem 0.4rem;
   border-radius: 8px;
-  font-size: 0.64rem;
+  font-size: 0.74rem;
   font-weight: 600;
   line-height: 1.2;
   white-space: normal;
@@ -129,8 +152,8 @@
 
 .help-panel__intro {
   margin: 0;
-  font-size: 0.68rem;
-  line-height: 1.5;
+  font-size: 0.78rem;
+  line-height: 1.45;
   color: #4a5c4a;
   font-style: italic;
 }
@@ -140,8 +163,8 @@
 }
 
 .help-panel__section h3 {
-  margin: 0 0 0.3rem;
-  font-size: 0.78rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
   font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -150,7 +173,7 @@
 
 .help-panel__section p {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   line-height: 1.5;
   color: #1a2e1a;
 }
@@ -162,7 +185,7 @@
 .help-panel__bullets {
   margin: 0.55rem 0 0;
   padding-left: 1.1rem;
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   line-height: 1.5;
   color: #1a2e1a;
 }
@@ -193,7 +216,7 @@
 
 .help-panel__figure figcaption {
   margin-top: 0.35rem;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   line-height: 1.4;
   color: #6b7f6b;
   text-align: left;
@@ -223,7 +246,7 @@
 
 .help-panel__gallery--grid .help-panel__figure figcaption {
   margin-top: 0.2rem;
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   text-align: left;
 }
 
@@ -261,7 +284,7 @@
 
 .help-panel__header h2 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   color: #2d4a2d;
 }
 
@@ -272,12 +295,12 @@
   border: 1px solid #d4dcc8;
   background: #eef3e8;
   color: #2d4a2d;
-  width: 1.4rem;
-  height: 1.4rem;
+  width: 1.625rem;
+  height: 1.625rem;
   aspect-ratio: 1;
-  padding: 0;
+  padding: 0 0 0.14em;
   border-radius: 6px;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   font-weight: 400;
   line-height: 1;
   flex-shrink: 0;
@@ -293,7 +316,7 @@
 .help-panel__list {
   margin: 0;
   padding-left: 1.1rem;
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   line-height: 1.5;
   color: #1a2e1a;
 }
@@ -307,7 +330,7 @@
 }
 
 .help-panel__list code {
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   background: #eef3e8;
   padding: 0.1rem 0.3rem;
   border-radius: 4px;
@@ -323,7 +346,7 @@
 }
 
 .help-panel__links a {
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   line-height: 1.45;
   color: #3d7a3d;
   text-decoration: underline;
@@ -340,7 +363,7 @@
 }
 
 .help-panel__refs li {
-  font-size: 0.78rem;
+  font-size: 0.9rem;
   line-height: 1.45;
   color: #1a2e1a;
   padding-left: 1.25rem;

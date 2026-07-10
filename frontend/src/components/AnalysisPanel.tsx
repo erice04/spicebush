@@ -45,19 +45,38 @@ function formatWeight(value: number): string {
 }
 
 function formatCorrelation(value: number): string {
+  if (Math.abs(value - 1) < 1e-9) return "1";
+  if (Math.abs(value + 1) < 1e-9) return "-1";
+  if (Math.abs(value) < 5e-3) return "0";
   return value.toFixed(2);
 }
 
+function mixRgb(
+  from: [number, number, number],
+  to: [number, number, number],
+  t: number,
+): string {
+  const u = Math.max(0, Math.min(1, t));
+  const r = Math.round(from[0] + (to[0] - from[0]) * u);
+  const g = Math.round(from[1] + (to[1] - from[1]) * u);
+  const b = Math.round(from[2] + (to[2] - from[2]) * u);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+/** Seaborn-style coolwarm: blue (−) → light grey (0) → deep red (+) */
 function correlationColor(value: number): string {
-  const intensity = Math.min(1, Math.abs(value));
-  if (value >= 0) {
-    return `rgba(45, 74, 45, ${0.08 + intensity * 0.72})`;
+  const v = Math.max(-1, Math.min(1, value));
+  const mid: [number, number, number] = [236, 236, 236];
+  const pos: [number, number, number] = [180, 24, 40];
+  const neg: [number, number, number] = [90, 140, 210];
+  if (v >= 0) {
+    return mixRgb(mid, pos, v);
   }
-  return `rgba(154, 74, 74, ${0.08 + intensity * 0.72})`;
+  return mixRgb(mid, neg, -v);
 }
 
 function correlationTextColor(value: number): string {
-  return Math.abs(value) >= 0.55 ? "#f4f7f0" : "#2d4a2d";
+  return value >= 0.65 ? "#ffffff" : "#1a1a1a";
 }
 
 function ensureLoadingWeights(
@@ -99,7 +118,7 @@ function findLoading(
 function VariableContributions({ loadings }: { loadings: PcaLoading[] }) {
   return (
     <section className="analysis-page__card">
-      <h3 className="analysis-page__card-title">PCA loadings</h3>
+      <h3 className="analysis-page__card-title">PCA Loadings</h3>
       <p className="analysis-page__card-lead">
         Correlation of each standardized trait with the component scores
         (loading = eigenvector × √eigenvalue).
@@ -131,46 +150,71 @@ function traitLabelWithoutUnits(label: string): string {
 }
 
 function CorrelationHeatmap({ correlation }: { correlation: CorrelationMatrix }) {
+  const n = correlation.labels.length;
+
   return (
     <section className="analysis-page__card">
-      <h3 className="analysis-page__card-title">Trait correlation matrix</h3>
+      <h3 className="analysis-page__card-title">Trait Correlation Matrix</h3>
       <p className="analysis-page__card-lead">
         Pearson correlations on z-scored morphology (n = all surveyed
         individuals). Diagonal entries are 1 by definition.
       </p>
-      <div className="analysis-panel__heatmap-wrap">
-        <table className="analysis-panel__heatmap">
-          <thead>
-            <tr>
-              <th scope="col" />
-              {correlation.labels.map((label) => (
-                <th key={label} scope="col">
-                  {traitLabelWithoutUnits(label)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {correlation.matrix.map((row, rowIndex) => (
-              <tr key={correlation.variables[rowIndex]}>
-                <th scope="row">
-                  {traitLabelWithoutUnits(correlation.labels[rowIndex])}
-                </th>
-                {row.map((value, columnIndex) => (
-                  <td
-                    key={`${rowIndex}-${columnIndex}`}
-                    style={{
-                      background: correlationColor(value),
-                      color: correlationTextColor(value),
-                    }}
-                  >
-                    {formatCorrelation(value)}
-                  </td>
-                ))}
-              </tr>
+      <div className="analysis-panel__heatmap-layout">
+        <div className="analysis-panel__heatmap-wrap">
+          <div
+            className="analysis-panel__heatmap-grid"
+            style={{ ["--heatmap-n" as string]: String(n) }}
+            role="table"
+            aria-label="Trait correlation matrix"
+          >
+            <div className="analysis-panel__heatmap-corner" role="presentation" />
+            {correlation.labels.map((label) => (
+              <div
+                key={`col-${label}`}
+                className="analysis-panel__heatmap-col-label"
+                role="columnheader"
+              >
+                {traitLabelWithoutUnits(label)}
+              </div>
             ))}
-          </tbody>
-        </table>
+            {correlation.matrix.flatMap((row, rowIndex) => [
+              <div
+                key={`row-${correlation.variables[rowIndex]}`}
+                className="analysis-panel__heatmap-row-label"
+                role="rowheader"
+              >
+                <span>{traitLabelWithoutUnits(correlation.labels[rowIndex])}</span>
+              </div>,
+              ...row.map((value, columnIndex) => (
+                <div
+                  key={`${rowIndex}-${columnIndex}`}
+                  className="analysis-panel__heatmap-cell"
+                  role="cell"
+                  style={{
+                    background: correlationColor(value),
+                    color: correlationTextColor(value),
+                  }}
+                >
+                  {formatCorrelation(value)}
+                </div>
+              )),
+            ])}
+          </div>
+        </div>
+        <div
+          className="analysis-panel__heatmap-scale"
+          aria-hidden="true"
+          title="Correlation scale from −1 to 1"
+        >
+          <div className="analysis-panel__heatmap-scale-bar" />
+          <div className="analysis-panel__heatmap-scale-ticks">
+            <span>1.0</span>
+            <span>0.5</span>
+            <span>0.0</span>
+            <span>−0.5</span>
+            <span>−1.0</span>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -204,7 +248,7 @@ function ResultsStrip({ analysis }: { analysis: AnalysisResponse }) {
           <strong>{formatPercent(retained)} variance</strong>
         </div>
         <div className="analysis-page__strip-item">
-          <span className="analysis-page__strip-label">Sex model</span>
+          <span className="analysis-page__strip-label">Sex Prediction Model</span>
           <strong>{formatPercent(classification.loocv_accuracy)} accuracy</strong>
         </div>
       </div>
@@ -373,7 +417,7 @@ function BriefContent({
     <div className="analysis-page__body">
       <aside className="analysis-page__details">
         <section className="analysis-page__card">
-          <h3 className="analysis-page__card-title">Key findings</h3>
+          <h3 className="analysis-page__card-title">Key Findings</h3>
             <ul className="analysis-page__tech-list">
               <li>
                 <strong>PC1 ({pc1Percent})</strong> is a size axis: DBH, base
@@ -401,7 +445,7 @@ function BriefContent({
           </section>
 
           <section className="analysis-page__card">
-            <h3 className="analysis-page__card-title">Classification snapshot</h3>
+            <h3 className="analysis-page__card-title">Classification Snapshot</h3>
             <p className="analysis-page__card-lead">
               A model guesses male vs female from the four size measurements,
               trained only on plants with known sex, then tested leave-one-out.
@@ -484,125 +528,125 @@ function TechnicalContent({
     <div className="analysis-page__body">
       <aside className="analysis-page__details">
         <section className="analysis-page__card">
-          <h3 className="analysis-page__card-title">Principal components</h3>
-            <p className="analysis-page__card-lead">
-              PCA was fit on all {preprocessing.pca_sample_size} individuals after
-              z-scoring DBH, base diameter, stem count, and height. Component
-              scores are linear combinations of the standardized traits using the
-              unit-length eigenvectors below.
-            </p>
-            <p className="analysis-page__equation">
-              PC1 ({pc1Percent} variance) ={" "}
-              {loadings
-                .map(
-                  (loading) =>
-                    `${formatWeight(loading.weight_pc1)}·z(${loading.label})`,
-                )
-                .join(" ")}
-            </p>
-            <p className="analysis-page__equation">
-              PC2 ({pc2Percent} variance) ={" "}
-              {loadings
-                .map(
-                  (loading) =>
-                    `${formatWeight(loading.weight_pc2)}·z(${loading.label})`,
-                )
-                .join(" ")}
-            </p>
-            <ul className="analysis-page__tech-list">
-              <li>
-                PC1 is a size axis: all four weights are positive, with the
-                largest contributions from base diameter (
-                {formatWeight(base?.weight_pc1 ?? Number.NaN)}), height (
-                {formatWeight(height?.weight_pc1 ?? Number.NaN)}), and DBH (
-                {formatWeight(dbh?.weight_pc1 ?? Number.NaN)}).
-              </li>
-              <li>
-                PC2 contrasts stem count (
-                {formatWeight(stems?.weight_pc2 ?? Number.NaN)}) against the
-                diameter and height traits, capturing residual branching structure
-                after overall size is removed.
-              </li>
-              <li>
-                Remaining variance: PC3 {pc3Percent}, PC4 {pc4Percent}. The
-                biplot retains PC1–PC2 only (~
-                {formatPercent(
-                  pca.explained_variance_ratio[0] +
-                    pca.explained_variance_ratio[1],
-                )}{" "}
-                cumulative).
-              </li>
-            </ul>
-          </section>
+          <h3 className="analysis-page__card-title">Principal Components</h3>
+          <p className="analysis-page__card-lead">
+            PCA was fit on all {preprocessing.pca_sample_size} individuals after
+            z-scoring DBH, base diameter, stem count, and height. Component
+            scores are linear combinations of the standardized traits using the
+            unit-length eigenvectors below.
+          </p>
+          <p className="analysis-page__equation">
+            PC1 ({pc1Percent} variance) ={" "}
+            {loadings
+              .map(
+                (loading) =>
+                  `${formatWeight(loading.weight_pc1)}·z(${loading.label})`,
+              )
+              .join(" ")}
+          </p>
+          <p className="analysis-page__equation">
+            PC2 ({pc2Percent} variance) ={" "}
+            {loadings
+              .map(
+                (loading) =>
+                  `${formatWeight(loading.weight_pc2)}·z(${loading.label})`,
+              )
+              .join(" ")}
+          </p>
+          <ul className="analysis-page__tech-list">
+            <li>
+              PC1 is a size axis: all four weights are positive, with the
+              largest contributions from base diameter (
+              {formatWeight(base?.weight_pc1 ?? Number.NaN)}), height (
+              {formatWeight(height?.weight_pc1 ?? Number.NaN)}), and DBH (
+              {formatWeight(dbh?.weight_pc1 ?? Number.NaN)}).
+            </li>
+            <li>
+              PC2 contrasts stem count (
+              {formatWeight(stems?.weight_pc2 ?? Number.NaN)}) against the
+              diameter and height traits, capturing residual branching structure
+              after overall size is removed.
+            </li>
+            <li>
+              Remaining variance: PC3 {pc3Percent}, PC4 {pc4Percent}. The
+              biplot retains PC1–PC2 only (~
+              {formatPercent(
+                pca.explained_variance_ratio[0] +
+                  pca.explained_variance_ratio[1],
+              )}{" "}
+              cumulative).
+            </li>
+          </ul>
+        </section>
 
-          <VariableContributions loadings={loadings} />
+        <VariableContributions loadings={loadings} />
 
-          <section className="analysis-page__card">
-            <h3 className="analysis-page__card-title">Sex classification</h3>
-            <p className="analysis-page__card-lead">
-              L2-regularized logistic regression on the same four z-scored traits,
-              trained on field-labeled M/F only (n ={" "}
-              {classification.labeled_count}). Leave-one-out cross-validation
-              accuracy: {formatPercent(classification.loocv_accuracy)}. Applied to{" "}
-              {classification.unlabeled_count} unlabeled (U/J) individuals for
-              predicted sex on the biplot. Probabilities in [0.30, 0.70] are
-              treated as uncertain.
-            </p>
-            <table className="analysis-panel__matrix">
-              <caption>LOOCV confusion matrix</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Actual \ Pred</th>
-                  {matrix.labels.map((label) => (
-                    <th key={label} scope="col">
-                      {label}
-                    </th>
+        <section className="analysis-page__card">
+          <h3 className="analysis-page__card-title">Sex Classification</h3>
+          <p className="analysis-page__card-lead">
+            L2-regularized logistic regression on the same four z-scored traits,
+            trained on field-labeled M/F only (n ={" "}
+            {classification.labeled_count}). Leave-one-out cross-validation
+            accuracy: {formatPercent(classification.loocv_accuracy)}. Applied to{" "}
+            {classification.unlabeled_count} unlabeled (U/J) individuals for
+            predicted sex on the biplot. Probabilities in [0.30, 0.70] are
+            treated as uncertain.
+          </p>
+          <table className="analysis-panel__matrix">
+            <caption>LOOCV confusion matrix</caption>
+            <thead>
+              <tr>
+                <th scope="col">Actual \ Pred</th>
+                {matrix.labels.map((label) => (
+                  <th key={label} scope="col">
+                    {label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {matrix.matrix.map((row, rowIndex) => (
+                <tr key={matrix.labels[rowIndex]}>
+                  <th scope="row">{matrix.labels[rowIndex]}</th>
+                  {row.map((value, columnIndex) => (
+                    <td key={`${rowIndex}-${columnIndex}`}>{value}</td>
                   ))}
                 </tr>
-              </thead>
-              <tbody>
-                {matrix.matrix.map((row, rowIndex) => (
-                  <tr key={matrix.labels[rowIndex]}>
-                    <th scope="row">{matrix.labels[rowIndex]}</th>
-                    {row.map((value, columnIndex) => (
-                      <td key={`${rowIndex}-${columnIndex}`}>{value}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="analysis-panel__note">
-              Missing DBH values were coded as 0; stem count &quot;M&quot;
-              (multiple) was coded as 3 prior to scaling. Unlabeled predictions
-              are model estimates, not field labels.
+              ))}
+            </tbody>
+          </table>
+          <p className="analysis-panel__note">
+            Missing DBH values were coded as 0; stem count &quot;M&quot;
+            (multiple) was coded as 3 prior to scaling. Unlabeled predictions
+            are model estimates, not field labels.
+          </p>
+        </section>
+      </aside>
+
+      <div className="analysis-page__chart-col">
+        <AnalysisPlotSection
+          pca={pca}
+          trees={trees}
+          highlightedTreeId={highlightedTreeId}
+          selectedTreeId={selectedTreeId}
+          onHoverTree={onHoverTree}
+          onSelectTree={onSelectTree}
+        />
+        {pca.correlation ? (
+          <CorrelationHeatmap correlation={pca.correlation} />
+        ) : (
+          <section className="analysis-page__card">
+            <h3 className="analysis-page__card-title">
+              Trait Correlation Matrix
+            </h3>
+            <p className="analysis-page__card-lead">
+              Correlation matrix unavailable in the loaded analysis payload.
+              Refresh or regenerate analysis data.
             </p>
           </section>
-        </aside>
-
-        <div className="analysis-page__chart-col">
-          <AnalysisPlotSection
-            pca={pca}
-            trees={trees}
-            highlightedTreeId={highlightedTreeId}
-            selectedTreeId={selectedTreeId}
-            onHoverTree={onHoverTree}
-            onSelectTree={onSelectTree}
-          />
-          {pca.correlation ? (
-            <CorrelationHeatmap correlation={pca.correlation} />
-          ) : (
-            <section className="analysis-page__card">
-              <h3 className="analysis-page__card-title">
-                Trait correlation matrix
-              </h3>
-              <p className="analysis-page__card-lead">
-                Correlation matrix unavailable in the loaded analysis payload.
-                Refresh or regenerate analysis data.
-              </p>
-            </section>
-          )}
-        </div>
+        )}
       </div>
+    </div>
   );
 }
 

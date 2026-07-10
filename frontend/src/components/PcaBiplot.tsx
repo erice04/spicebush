@@ -28,7 +28,7 @@ const KNOWN_RADIUS = 3.5;
 const PREDICTED_MARKER_SIZE = 10;
 const PREDICTED_MARKER_SIZE_FULL = 11;
 
-const MARGIN = { top: 28, right: 28, bottom: 52, left: 56 };
+const MARGIN = { top: 12, right: 28, bottom: 52, left: 56 };
 const POPUP_MARGIN = { top: 8, right: 20, bottom: 36, left: 42 };
 const CHART_TITLE = "Morphology PCA";
 const POPUP_CHART_REF_WIDTH = 280;
@@ -286,16 +286,6 @@ export default function PcaBiplot({
     svg.selectAll("*").remove();
     svg.attr("viewBox", `0 0 ${width} ${height}`);
 
-    if (layout !== "popup") {
-      svg
-        .append("text")
-        .attr("x", width / 2)
-        .attr("y", 18)
-        .attr("text-anchor", "middle")
-        .attr("class", "pca-biplot__title")
-        .text(CHART_TITLE);
-    }
-
     const root = svg
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
@@ -550,20 +540,13 @@ export default function PcaBiplot({
 
   const legendGrid = (
     <div className="pca-biplot__legend-grid">
-      {layout === "popup" ? (
-        <>
-          {knownLegendItems}
-          <span className="pca-biplot__legend-item pca-biplot__legend-item--spacer" aria-hidden="true" />
-          {predictedLegendItems}
-          {uncertainLegendItem}
-        </>
-      ) : (
-        <>
-          {knownLegendItems}
-          {uncertainLegendItem}
-          {predictedLegendItems}
-        </>
-      )}
+      {knownLegendItems}
+      <span
+        className="pca-biplot__legend-item pca-biplot__legend-item--spacer"
+        aria-hidden="true"
+      />
+      {predictedLegendItems}
+      {uncertainLegendItem}
     </div>
   );
 
@@ -578,10 +561,12 @@ export default function PcaBiplot({
       ref={biplotRef}
       className={`pca-biplot${layout === "popup" ? " pca-biplot--popup" : ""}`}
     >
-      {layout === "popup" && (
+      {layout === "popup" ? (
         <div className="pca-biplot__intro">
           <h3 className="pca-biplot__heading">{CHART_TITLE}</h3>
         </div>
+      ) : (
+        <h3 className="pca-biplot__heading">{CHART_TITLE}</h3>
       )}
       <div ref={containerRef} className="pca-biplot__chart">
         <svg

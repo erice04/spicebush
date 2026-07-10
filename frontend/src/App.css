@@ -35,6 +35,8 @@
   justify-content: space-between;
   flex-wrap: nowrap;
   gap: 1rem;
+  box-sizing: border-box;
+  min-height: 4.35rem;
   padding: 0.85rem var(--overlay-inset);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 55%),
@@ -80,6 +82,42 @@
   border-radius: 8px;
   padding: 3px;
   gap: 2px;
+}
+
+.app-header__toggles {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 1.35rem;
+}
+
+.density-controls {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.density-points-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  margin: 0;
+  color: rgba(244, 247, 240, 0.88);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.density-points-check input {
+  width: 0.7rem;
+  height: 0.7rem;
+  margin: 0;
+  accent-color: #f4f7f0;
+  cursor: pointer;
 }
 
 @container (max-width: 36rem) {
@@ -136,20 +174,34 @@
   min-height: 0;
   overflow: hidden;
   --overlay-inset: 1.25rem;
+  /* Distance from map edge to Route / Analysis / Data / ? / Filters */
+  --controls-inset: 1.5rem;
+  /* Shared size for map control pills and the ? fab (scaled when groups would overlap) */
+  --map-control-btn-height: 2.7rem;
+  --map-control-btn-font: 0.95rem;
+  --map-control-btn-pad-x: 1.05rem;
+  --map-control-fab-font: 1.15rem;
+  --map-control-filter-min-width: 5.9rem;
+  --map-control-gap: 0.5rem;
 }
 
 .map-top-left-controls {
   position: absolute;
-  top: calc(var(--overlay-inset) - 0.25rem);
-  left: var(--overlay-inset);
+  top: var(--controls-inset);
+  left: var(--controls-inset);
   z-index: 2;
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  gap: 0.5rem;
-  max-width: calc(100% - 2 * var(--overlay-inset));
-  max-height: calc(100% - 2 * var(--overlay-inset));
+  gap: var(--map-control-gap);
+  max-width: calc(100% - 2 * var(--controls-inset));
+  max-height: calc(100% - 2 * var(--controls-inset));
   pointer-events: none;
+}
+
+/* Open toolbox popups sit above map chrome, filters, and ID sidebar */
+.app-main--toolbox-open .map-top-left-controls {
+  z-index: 50;
 }
 
 .map-top-left-controls > * {
@@ -160,9 +212,9 @@
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  gap: 0.5rem;
+  gap: var(--map-control-gap);
   position: relative;
-  z-index: 4;
+  z-index: 1;
 }
 
 .analysis-panel__error {
@@ -177,22 +229,29 @@
 
 .map-top-controls {
   position: absolute;
-  top: calc(var(--overlay-inset) - 0.25rem);
-  right: var(--overlay-inset);
+  top: var(--controls-inset);
+  right: var(--controls-inset);
   z-index: 2;
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
-  max-width: calc(100% - 2 * var(--overlay-inset));
-  max-height: calc(100% - 2 * var(--overlay-inset));
+  gap: var(--map-control-gap);
+  max-width: calc(100% - 2 * var(--controls-inset));
+  max-height: calc(100% - 2 * var(--controls-inset));
 }
 
-/* Stay fixed left of the Filters tab; the open panel covers this spot. */
+/* Open filter panel sits above left controls and map chrome; help stays put */
+.app-main--filter-open .map-top-controls {
+  z-index: 50;
+}
+
 .map-top-controls__help {
-  position: absolute;
-  top: 0;
-  right: 5.9rem;
+  position: relative;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  height: var(--map-control-btn-height);
+  flex-shrink: 0;
 }
 
 .map-top-controls > :not(.map-top-controls__help) {

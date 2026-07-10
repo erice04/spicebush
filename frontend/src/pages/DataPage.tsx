@@ -190,12 +190,14 @@ function columnContentWidth(column: string, rows: RowData[]): number {
     maxLen = Math.max(maxLen, cellToInput(row[column] ?? null).length);
   }
   if (column === "Date") {
-    maxLen = Math.max(maxLen, 9);
+    maxLen = Math.max(maxLen, 7); // YYYY-MM
   }
   if (column === "Notes") {
     maxLen = Math.max(maxLen, 12);
   }
-  return Math.min(48, Math.max(4, maxLen + 1));
+  // Room for padded column titles (~1.25rem each side)
+  const titlePadCh = 6;
+  return Math.min(56, Math.max(4, maxLen + 1 + titlePadCh));
 }
 
 interface PlantGroup {

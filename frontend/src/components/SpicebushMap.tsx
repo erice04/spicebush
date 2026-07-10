@@ -98,6 +98,8 @@ interface SpicebushMapProps {
   onRouteStartPick: (tree: TreeFeature) => void;
   analysisPopupHeight?: number;
   flyToOnSelect?: boolean;
+  densityHeatmap?: boolean;
+  showTreePoints?: boolean;
 }
 
 function getOverlayInsetPx(container: HTMLElement): number {
@@ -223,6 +225,106 @@ function extractPolygon(draw: MapboxDraw): Polygon | null {
 
 const TREE_CIRCLE_LAYER = "spicebush-circles";
 const TREE_FOCUS_LAYER = "spicebush-circles-focus";
+const TREE_HEATMAP_LAYER = "spicebush-heatmap";
+
+function ensureHeatmapLayer(map: mapboxgl.Map) {
+  if (!map.getSource("spicebush-trees") || map.getLayer(TREE_HEATMAP_LAYER)) {
+    return;
+  }
+
+  const beforeId = map.getLayer(TREE_CIRCLE_LAYER)
+    ? TREE_CIRCLE_LAYER
+    : undefined;
+
+  map.addLayer(
+    {
+      id: TREE_HEATMAP_LAYER,
+      type: "heatmap",
+      source: "spicebush-trees",
+      layout: {
+        visibility: "none",
+      },
+      paint: {
+        "heatmap-weight": 1,
+        "heatmap-intensity": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          14,
+          0.55,
+          16.5,
+          1.05,
+          18,
+          1.35,
+        ],
+        "heatmap-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          14,
+          18,
+          16.5,
+          32,
+          18,
+          48,
+        ],
+        "heatmap-opacity": 0.78,
+        "heatmap-color": [
+          "interpolate",
+          ["linear"],
+          ["heatmap-density"],
+          0,
+          "rgba(61, 122, 61, 0)",
+          0.15,
+          "rgba(103, 169, 140, 0.45)",
+          0.35,
+          "rgba(209, 229, 180, 0.75)",
+          0.55,
+          "rgba(253, 200, 120, 0.85)",
+          0.75,
+          "rgba(239, 138, 98, 0.92)",
+          1,
+          "rgb(178, 48, 40)",
+        ],
+      },
+    },
+    beforeId,
+  );
+}
+
+function applyHeatmapState(
+  map: mapboxgl.Map,
+  enabled: boolean,
+  excludedIds: number[],
+) {
+  ensureHeatmapLayer(map);
+  if (!map.getLayer(TREE_HEATMAP_LAYER)) {
+    return;
+  }
+
+  map.setLayoutProperty(
+    TREE_HEATMAP_LAYER,
+    "visibility",
+    enabled ? "visible" : "none",
+  );
+
+  map.setFilter(
+    TREE_HEATMAP_LAYER,
+    excludedIds.length > 0
+      ? ["!", ["in", ["get", "id"], ["literal", excludedIds]]]
+      : null,
+  );
+}
+
+function applyTreePointVisibility(map: mapboxgl.Map, visible: boolean) {
+  const visibility = visible ? "visible" : "none";
+  if (map.getLayer(TREE_CIRCLE_LAYER)) {
+    map.setLayoutProperty(TREE_CIRCLE_LAYER, "visibility", visibility);
+  }
+  if (map.getLayer(TREE_FOCUS_LAYER)) {
+    map.setLayoutProperty(TREE_FOCUS_LAYER, "visibility", visibility);
+  }
+}
 
 function ensureFocusCircleLayer(map: mapboxgl.Map) {
   if (!map.getSource("spicebush-trees") || map.getLayer(TREE_FOCUS_LAYER)) {
@@ -397,6 +499,8 @@ export default function SpicebushMap({
   onRouteStartPick,
   analysisPopupHeight = 0,
   flyToOnSelect = true,
+  densityHeatmap = false,
+  showTreePoints = true,
 }: SpicebushMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -405,6 +509,8 @@ export default function SpicebushMap({
   const analysisPopupHeightRef = useRef(analysisPopupHeight);
   const treesRef = useRef(trees);
   const excludedIdsRef = useRef(manualExcludedIds);
+  const densityHeatmapRef = useRef(densityHeatmap);
+  const showTreePointsRef = useRef(showTreePoints);
   const onSelectTreeRef = useRef(onSelectTree);
   const onHoverTreeRef = useRef(onHoverTree);
   const onToggleTreeRef = useRef(onToggleTree);
@@ -424,6 +530,8 @@ export default function SpicebushMap({
 
   treesRef.current = trees;
   excludedIdsRef.current = manualExcludedIds;
+  densityHeatmapRef.current = densityHeatmap;
+  showTreePointsRef.current = showTreePoints;
   onSelectTreeRef.current = onSelectTree;
   onHoverTreeRef.current = onHoverTree;
   onToggleTreeRef.current = onToggleTree;
@@ -732,6 +840,13 @@ export default function SpicebushMap({
       (map.getSource("spicebush-trees") as mapboxgl.GeoJSONSource).setData(
         treesToGeoJSON(treesRef.current),
       );
+      ensureHeatmapLayer(map);
+      applyHeatmapState(
+        map,
+        densityHeatmapRef.current,
+        excludedIdsRef.current,
+      );
+      applyTreePointVisibility(map, showTreePointsRef.current);
       applyCircleStyles(
         map,
         null,
@@ -765,6 +880,14 @@ export default function SpicebushMap({
         "circle-opacity": 0.92,
       },
     });
+
+    ensureHeatmapLayer(map);
+    applyHeatmapState(
+      map,
+      densityHeatmapRef.current,
+      excludedIdsRef.current,
+    );
+    applyTreePointVisibility(map, showTreePointsRef.current);
 
     applyCircleStyles(
       map,
@@ -923,7 +1046,7 @@ export default function SpicebushMap({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !map.getSource("spicebush-trees")) return;
 
     applyCircleStyles(
       map,
@@ -932,6 +1055,8 @@ export default function SpicebushMap({
       manualExcludedIds,
       routeStartTreeId,
     );
+    applyHeatmapState(map, densityHeatmap, manualExcludedIds);
+    applyTreePointVisibility(map, showTreePoints);
 
     if (selectedTreeId !== null && flyToOnSelect) {
       const tree = trees.find((t) => t.properties.id === selectedTreeId);
@@ -944,7 +1069,7 @@ export default function SpicebushMap({
         });
       }
     }
-  }, [selectedTreeId, highlightedTreeId, manualExcludedIds, routeStartTreeId, trees, flyToOnSelect]);
+  }, [selectedTreeId, highlightedTreeId, manualExcludedIds, routeStartTreeId, trees, flyToOnSelect, densityHeatmap, showTreePoints]);
 
   useEffect(() => {
     const map = mapRef.current;

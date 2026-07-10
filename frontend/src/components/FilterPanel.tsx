@@ -143,6 +143,8 @@ export default function FilterPanel({
     );
   };
 
+  const tabLabel = `Filters${activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}`;
+
   if (!expanded) {
     return (
       <button
@@ -152,16 +154,20 @@ export default function FilterPanel({
         aria-expanded={false}
         aria-label="Show filters"
       >
-        Filters
-        {activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+        {tabLabel}
       </button>
     );
   }
 
   return (
-    <aside
-      className={`filter-panel${closing ? " filter-panel--closing" : ""}`}
-    >
+    <div className="filter-panel-anchor">
+      {/* Reserve the Filters tab footprint so ? does not shift when the panel opens */}
+      <span className="filter-panel__tab filter-panel__tab--sizer" aria-hidden="true">
+        {tabLabel}
+      </span>
+      <aside
+        className={`filter-panel${closing ? " filter-panel--closing" : ""}`}
+      >
       <div className="filter-panel__header">
         <div className="filter-panel__header-text">
           <h2>Filters</h2>
@@ -378,5 +384,6 @@ export default function FilterPanel({
         )}
       </fieldset>
     </aside>
+    </div>
   );
 }

@@ -227,7 +227,7 @@ function fitSidebarToLayout(
     if (leftControls && analysisPopup) {
       const mainRect = main.getBoundingClientRect();
       const analysisRect = analysisPopup.getBoundingClientRect();
-      const gap = 8;
+      const gap = 20;
       sidebar.style.left = `${Math.max(0, analysisRect.left - mainRect.left)}px`;
       sidebar.style.right = `${Math.max(
         0,
@@ -263,17 +263,24 @@ function fitSidebarToLayout(
 
   const mainRect = main.getBoundingClientRect();
   const sidebarTop = sidebar.getBoundingClientRect().top;
-  const overlayInset = Number.parseFloat(
-    getComputedStyle(main).getPropertyValue("--overlay-inset"),
-  );
   const rem =
     Number.parseFloat(getComputedStyle(document.documentElement).fontSize) ||
     16;
-  // Match map-top-left-controls top: calc(var(--overlay-inset) - 0.25rem)
-  const edgeInset = Math.max(
-    0,
-    (Number.isFinite(overlayInset) ? overlayInset : 20) - 0.25 * rem,
-  );
+  // Match map-top-left-controls top: var(--controls-inset)
+  const controlsInsetRaw = getComputedStyle(main)
+    .getPropertyValue("--controls-inset")
+    .trim();
+  const overlayInsetRaw = getComputedStyle(main)
+    .getPropertyValue("--overlay-inset")
+    .trim();
+  const toPx = (value: string, fallback: number) => {
+    const n = Number.parseFloat(value);
+    if (!Number.isFinite(n)) {
+      return fallback;
+    }
+    return value.endsWith("rem") ? n * rem : n;
+  };
+  const edgeInset = toPx(controlsInsetRaw, toPx(overlayInsetRaw, 24));
   const availableHeight = mainRect.bottom - sidebarTop - edgeInset;
   const naturalHeight = sidebar.scrollHeight;
 

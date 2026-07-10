@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useCloseAnimation } from "../hooks/useCloseAnimation";
 import "./HelpPanel.css";
 
@@ -37,9 +38,14 @@ export default function HelpPanel({
   onOpen,
 }: HelpPanelProps) {
   const [activeTab, setActiveTab] = useState<HelpTab>("map");
+  const bodyRef = useRef<HTMLDivElement>(null);
   const { closing, beginClose } = useCloseAnimation();
 
   const handleClose = () => beginClose(onClose);
+
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: 0 });
+  }, [activeTab]);
 
   if (!open) {
     if (!showFab) {
@@ -58,7 +64,7 @@ export default function HelpPanel({
     );
   }
 
-  return (
+  return createPortal(
     <div
       className={`help-panel__backdrop${closing ? " help-panel__backdrop--closing" : ""}`}
       onClick={handleClose}
@@ -99,7 +105,7 @@ export default function HelpPanel({
           ))}
         </div>
 
-        <div className="help-panel__body">
+        <div className="help-panel__body" ref={bodyRef}>
           <div key={activeTab} className="help-panel__pane">
           {activeTab === "map" && (
             <ul
@@ -432,6 +438,7 @@ export default function HelpPanel({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

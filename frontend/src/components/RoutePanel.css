@@ -1,12 +1,18 @@
 .route-panel__tab {
+  box-sizing: border-box;
   flex-shrink: 0;
+  height: var(--map-control-btn-height, 2.7rem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid #d4dcc8;
   background: rgba(255, 255, 255, 0.96);
   color: #2d4a2d;
-  padding: 0.55rem 0.9rem;
+  padding: 0 var(--map-control-btn-pad-x, 1.05rem);
   border-radius: 999px;
-  font-size: 0.85rem;
+  font-size: var(--map-control-btn-font, 0.95rem);
   font-weight: 600;
+  line-height: 1;
   box-shadow: 0 4px 16px rgba(26, 46, 26, 0.15);
   backdrop-filter: blur(6px);
   transition:
@@ -40,7 +46,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 6;
+  z-index: 5;
 }
 
 .route-panel--closing {
@@ -69,12 +75,12 @@
   border: 1px solid #d4dcc8;
   background: #eef3e8;
   color: #2d4a2d;
-  width: 1.4rem;
-  height: 1.4rem;
+  width: 1.625rem;
+  height: 1.625rem;
   aspect-ratio: 1;
-  padding: 0;
+  padding: 0 0 0.14em;
   border-radius: 6px;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   font-weight: 400;
   line-height: 1;
   flex-shrink: 0;

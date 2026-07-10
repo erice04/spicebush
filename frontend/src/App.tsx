@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import SpicebushMap from "./components/SpicebushMap";
 import TreeSidebar from "./components/TreeSidebar";
 import FilterPanel from "./components/FilterPanel";
@@ -50,6 +50,8 @@ function App() {
   const [trees, setTrees] = useState<TreeFeature[]>([]);
   const [selectedTree, setSelectedTree] = useState<TreeFeature | null>(null);
   const [basemap, setBasemap] = useState<BasemapStyle>("terrain");
+  const [densityHeatmap, setDensityHeatmap] = useState(false);
+  const [showTreePoints, setShowTreePoints] = useState(true);
   const [selection, setSelection] = useState<SelectionState | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const hasOpenedHelp = useRef(false);
@@ -69,9 +71,11 @@ function App() {
   const [analysisPopupHeight, setAnalysisPopupHeight] = useState(0);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [routeExpanded, setRouteExpanded] = useState(false);
+  const [filterExpanded, setFilterExpanded] = useState(false);
   const [highlightedTreeId, setHighlightedTreeId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const appMainRef = useRef<HTMLElement>(null);
 
   const bounds = useMemo(
     () => (trees.length > 0 ? computeDataBounds(trees) : null),
@@ -511,6 +515,104 @@ function App() {
     };
   }, [analysis, selectedTree]);
 
+  const analysisPopupOpen = analysisOpen && !analysisExpanded;
+  /** Layout signal for ID card: drop as soon as popup close animation starts. */
+  const analysisLayoutActive = analysisPopupOpen && !analysisPopupClosing;
+  const toolboxOverlayOpen = analysisLayoutActive || routeExpanded;
+  const showAnalysisPage =
+    analysisOpen && (analysisExpanded || analysisPageExiting);
+
+  useLayoutEffect(() => {
+    if (loading || error || !mapboxToken) {
+      return;
+    }
+    const main = appMainRef.current;
+    if (!main) return;
+
+    const FULL = {
+      height: 2.7,
+      font: 0.95,
+      padX: 1.05,
+      fabFont: 1.15,
+      filterMin: 5.9,
+    };
+    const MIN_SCALE = 0.68;
+    const GAP_PX = 8;
+
+    const applyScale = (scale: number) => {
+      const s = Math.max(MIN_SCALE, Math.min(1, scale));
+      main.style.setProperty(
+        "--map-control-btn-height",
+        `${(FULL.height * s).toFixed(3)}rem`,
+      );
+      main.style.setProperty(
+        "--map-control-btn-font",
+        `${(FULL.font * s).toFixed(3)}rem`,
+      );
+      main.style.setProperty(
+        "--map-control-btn-pad-x",
+        `${(FULL.padX * s).toFixed(3)}rem`,
+      );
+      main.style.setProperty(
+        "--map-control-fab-font",
+        `${(FULL.fabFont * s).toFixed(3)}rem`,
+      );
+      main.style.setProperty(
+        "--map-control-filter-min-width",
+        `${(FULL.filterMin * s).toFixed(3)}rem`,
+      );
+    };
+
+    const fitControls = () => {
+      const left = main.querySelector(
+        ".map-top-left-controls__tabs",
+      ) as HTMLElement | null;
+      const right = main.querySelector(".map-top-controls") as HTMLElement | null;
+      if (!left || !right) {
+        applyScale(1);
+        return;
+      }
+
+      const styles = getComputedStyle(main);
+      const insetRaw = styles.getPropertyValue("--controls-inset").trim();
+      const rootFont =
+        parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const insetPx = insetRaw.endsWith("rem")
+        ? (parseFloat(insetRaw) || 1.5) * rootFont
+        : parseFloat(insetRaw) || 24;
+      const available = main.clientWidth - 2 * insetPx;
+
+      let scale = 1;
+      for (let i = 0; i < 6; i++) {
+        applyScale(scale);
+        const rightPills = Array.from(
+          right.querySelectorAll(".help-panel__fab, .filter-panel__tab"),
+        ) as HTMLElement[];
+        const leftWidth = left.getBoundingClientRect().width;
+        const rightWidth =
+          rightPills.length > 0
+            ? rightPills.reduce(
+                (sum, el) => sum + el.getBoundingClientRect().width,
+                0,
+              ) +
+              Math.max(0, rightPills.length - 1) * GAP_PX
+            : 0;
+        const needed = leftWidth + rightWidth + GAP_PX;
+        if (needed <= available || needed <= 0) break;
+        scale = Math.max(MIN_SCALE, scale * (available / needed));
+      }
+    };
+
+    fitControls();
+    const observer = new ResizeObserver(() => fitControls());
+    observer.observe(main);
+    window.addEventListener("resize", fitControls);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", fitControls);
+    };
+  }, [loading, error, mapboxToken, selection, analysis, showAnalysisPage, filterExpanded, helpOpen]);
+
   if (!mapboxToken) {
     return (
       <div className="app-shell app-shell--centered">
@@ -553,13 +655,6 @@ function App() {
     selectedTree !== null &&
     selection?.manualExcluded.has(selectedTree.properties.id) === true;
 
-  const analysisPopupOpen = analysisOpen && !analysisExpanded;
-  /** Layout signal for ID card: drop as soon as popup close animation starts. */
-  const analysisLayoutActive = analysisPopupOpen && !analysisPopupClosing;
-  const toolboxOverlayOpen = analysisLayoutActive || routeExpanded;
-  const showAnalysisPage =
-    analysisOpen && (analysisExpanded || analysisPageExiting);
-
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -575,30 +670,71 @@ function App() {
             <span className="app-header__location">New Haven, CT</span>
           </p>
         </div>
-        <div className="basemap-toggle" role="group" aria-label="Basemap style">
-          <button
-            type="button"
-            className={basemap === "terrain" ? "active" : ""}
-            onClick={() => setBasemap("terrain")}
-          >
-            Default
-          </button>
-          <button
-            type="button"
-            className={basemap === "satellite" ? "active" : ""}
-            onClick={() => setBasemap("satellite")}
-          >
-            Satellite
-          </button>
+        <div className="app-header__toggles">
+          <div className="density-controls" role="group" aria-label="Plant density">
+            <div className="basemap-toggle">
+              <button
+                type="button"
+                className={densityHeatmap ? "active" : ""}
+                onClick={() => {
+                  setDensityHeatmap((current) => {
+                    if (current) {
+                      setShowTreePoints(true);
+                    }
+                    return !current;
+                  });
+                }}
+                aria-pressed={densityHeatmap}
+              >
+                Density
+              </button>
+            </div>
+            {densityHeatmap && (
+              <label className="density-points-check">
+                <input
+                  type="checkbox"
+                  checked={showTreePoints}
+                  onChange={() => setShowTreePoints((current) => !current)}
+                />
+                Points
+              </label>
+            )}
+          </div>
+          <div className="basemap-toggle" role="group" aria-label="Basemap style">
+            <button
+              type="button"
+              className={basemap === "terrain" ? "active" : ""}
+              onClick={() => setBasemap("terrain")}
+            >
+              Default
+            </button>
+            <button
+              type="button"
+              className={basemap === "satellite" ? "active" : ""}
+              onClick={() => setBasemap("satellite")}
+            >
+              Satellite
+            </button>
+          </div>
         </div>
       </header>
 
       <main
-        className={`app-main${analysisPopupOpen ? " app-main--analysis-popup-open" : ""}`}
+        ref={appMainRef}
+        className={[
+          "app-main",
+          analysisPopupOpen ? "app-main--analysis-popup-open" : "",
+          analysisPopupOpen || routeExpanded ? "app-main--toolbox-open" : "",
+          filterExpanded ? "app-main--filter-open" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
       >
         <SpicebushMap
           trees={treesForMap}
           basemap={basemap}
+          densityHeatmap={densityHeatmap}
+          showTreePoints={showTreePoints}
           mapboxToken={mapboxToken}
           regionPolygon={selection?.regionPolygon ?? null}
           manualExcludedIds={manualExcludedIds}
@@ -737,6 +873,7 @@ function App() {
               onLoadSelection={handleLoadSelection}
               onDeleteSelection={handleDeleteSelection}
               onSearchTreeId={handleSearchTreeId}
+              onExpandedChange={setFilterExpanded}
             />
           )}
         </div>
