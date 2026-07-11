@@ -98,3 +98,89 @@
 .spicebush-map .tree-hover-popup .mapboxgl-popup-tip {
   display: none;
 }
+
+.spicebush-map__sex-legend {
+  position: absolute;
+  right: var(--controls-inset, 1.5rem);
+  bottom: calc(var(--overlay-inset, 1.25rem) + 0.35rem);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 8.75rem;
+  padding: 0.55rem 0.65rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid rgba(45, 74, 45, 0.12);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 1px 2px rgba(26, 46, 26, 0.04),
+    0 8px 24px rgba(26, 46, 26, 0.12);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+  color: #2d4a2d;
+  line-height: 1.25;
+}
+
+.spicebush-map__sex-legend--collapsed {
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+}
+
+.spicebush-map__sex-legend-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.spicebush-map__sex-legend-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #1a2e1a;
+}
+
+.spicebush-map__sex-legend-toggle-row input {
+  width: 0.85rem;
+  height: 0.85rem;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: #3d7a3d;
+  cursor: pointer;
+}
+
+.spicebush-map__sex-legend-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.38rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(45, 74, 45, 0.1);
+}
+
+.spicebush-map__sex-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.spicebush-map__sex-legend-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #3d5340;
+  letter-spacing: 0.005em;
+}
+
+.spicebush-map__sex-legend-swatch {
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 1px rgba(45, 74, 45, 0.16);
+  flex-shrink: 0;
+}
+

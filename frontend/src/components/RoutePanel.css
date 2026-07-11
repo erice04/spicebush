@@ -13,7 +13,7 @@
   font-size: var(--map-control-btn-font, 0.95rem);
   font-weight: 600;
   line-height: 1;
-  box-shadow: 0 4px 16px rgba(26, 46, 26, 0.15);
+  box-shadow: 0 6px 20px rgba(26, 46, 26, 0.22);
   backdrop-filter: blur(6px);
   transition:
     background 0.18s ease,

@@ -4,6 +4,7 @@ import type { PcaPoint, PcaResult } from "../types/analysis";
 import type { TreeFeature } from "../types";
 import { formatSex, formatStemCount } from "../utils/labels";
 import { isUncertainPrediction } from "../utils/sexPrediction";
+import { SEX_COLORS, SEX_MARKER_STROKE } from "../theme/sexColors";
 import "./PcaBiplot.css";
 
 interface PcaBiplotProps {
@@ -17,10 +18,11 @@ interface PcaBiplotProps {
   trees?: TreeFeature[];
 }
 
-const MALE_COLOR = "#4a6fa5";
-const FEMALE_COLOR = "#e8a8c4";
-const UNLABELED_COLOR = "#8a968a";
-const UNCERTAIN_COLOR = "#8b1a1a";
+const MALE_COLOR = SEX_COLORS.male;
+const FEMALE_COLOR = SEX_COLORS.female;
+const JUVENILE_COLOR = SEX_COLORS.juvenile;
+const UNLABELED_COLOR = SEX_COLORS.unknown;
+const UNCERTAIN_COLOR = SEX_COLORS.uncertain;
 const SELECTED_COLOR = "#ffe566";
 const SELECTED_STROKE = "#3d3a00";
 const HOVER_STROKE = "#2d4a2d";
@@ -34,7 +36,8 @@ const CHART_TITLE = "Morphology PCA";
 const POPUP_CHART_REF_WIDTH = 280;
 
 function isPredictedPoint(point: PcaPoint): boolean {
-  return !point.sex_known;
+  // Juveniles are a recorded category (not a sex prediction).
+  return !point.sex_known && point.sex !== "J";
 }
 
 function pointColor(
@@ -42,6 +45,9 @@ function pointColor(
   sexKnown: boolean,
   probabilityFemale: number | null,
 ): string {
+  if (sex === "J") {
+    return JUVENILE_COLOR;
+  }
   if (sexKnown && sex === "M") {
     return MALE_COLOR;
   }
@@ -73,7 +79,7 @@ function applyPointStyles(
     ? SELECTED_STROKE
     : isHighlighted
       ? HOVER_STROKE
-      : "#f4f7f0";
+      : SEX_MARKER_STROKE;
   const strokeWidth = isHighlighted || isSelected ? 2 : 1;
 
   return { fill, stroke, strokeWidth, isHighlighted, isSelected };
@@ -494,6 +500,15 @@ export default function PcaBiplot({
         </span>
         <span className="pca-biplot__legend-label">Male (M)</span>
       </span>
+      <span className="pca-biplot__legend-item">
+        <span className="pca-biplot__legend-symbol" aria-hidden="true">
+          <span
+            className="pca-biplot__swatch"
+            style={{ background: JUVENILE_COLOR }}
+          />
+        </span>
+        <span className="pca-biplot__legend-label">Juvenile (J)</span>
+      </span>
     </>
   );
 
@@ -508,7 +523,7 @@ export default function PcaBiplot({
             +
           </span>
         </span>
-        <span className="pca-biplot__legend-label">Predicted female (U/J)</span>
+        <span className="pca-biplot__legend-label">Predicted female (U)</span>
       </span>
       <span className="pca-biplot__legend-item">
         <span className="pca-biplot__legend-symbol" aria-hidden="true">
@@ -519,7 +534,7 @@ export default function PcaBiplot({
             +
           </span>
         </span>
-        <span className="pca-biplot__legend-label">Predicted male (U/J)</span>
+        <span className="pca-biplot__legend-label">Predicted male (U)</span>
       </span>
     </>
   );
@@ -541,10 +556,6 @@ export default function PcaBiplot({
   const legendGrid = (
     <div className="pca-biplot__legend-grid">
       {knownLegendItems}
-      <span
-        className="pca-biplot__legend-item pca-biplot__legend-item--spacer"
-        aria-hidden="true"
-      />
       {predictedLegendItems}
       {uncertainLegendItem}
     </div>

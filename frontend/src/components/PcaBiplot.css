@@ -187,18 +187,14 @@
 .pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-grid {
   gap: calc(0.35rem * var(--pca-legend-scale)) calc(1.1rem * var(--pca-legend-scale));
   justify-content: center;
-  /* Row 1: F | M | spacer; Row 2: Pred F | Pred M | Uncertain */
+  /* Row 1: F | M | J; Row 2: Pred F | Pred M | Uncertain */
   grid-template-columns: repeat(3, max-content);
 }
 
-/* Narrow plot: drop spacer and use 2 columns so Uncertain wraps to row 3 */
+/* Narrow plot: 2 columns so Uncertain wraps to row 3 */
 @container pca-legend (max-width: 22rem) {
   .pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-grid {
     grid-template-columns: repeat(2, max-content);
-  }
-
-  .pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-item--spacer {
-    display: none;
   }
 }
 
@@ -322,19 +318,15 @@
   max-width: 100%;
   margin: 0 auto;
   gap: calc(0.25rem * var(--pca-ui-scale)) calc(0.75rem * var(--pca-ui-scale));
-  /* Row 1: F | M | spacer; Row 2: Pred F | Pred M | Uncertain */
+  /* Row 1: F | M | J; Row 2: Pred F | Pred M | Uncertain */
   grid-template-columns: repeat(3, max-content);
   justify-content: center;
 }
 
-/* Narrow popup: drop spacer so Uncertain wraps to row 3 */
+/* Narrow popup: 2 columns so Uncertain wraps to row 3 */
 @container pca-popup-legend (max-width: 24rem) {
   .pca-biplot--popup .pca-biplot__legend-grid {
     grid-template-columns: repeat(2, max-content);
-  }
-
-  .pca-biplot--popup .pca-biplot__legend-item--spacer {
-    display: none;
   }
 
   .pca-biplot--popup .pca-biplot__legend-item--uncertain {

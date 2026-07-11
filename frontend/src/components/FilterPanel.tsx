@@ -11,6 +11,7 @@ import {
   PREDICTED_SEX_OPTIONS,
   normalizePredictedSex,
 } from "../utils/filters";
+import { sexFillColor } from "../theme/sexColors";
 import { useAnimatedOpen } from "../hooks/useCloseAnimation";
 import RangeSlider from "./RangeSlider";
 import "./FilterPanel.css";
@@ -113,6 +114,11 @@ export default function FilterPanel({
           type="checkbox"
           checked={attributeFilters.sex[value]}
           onChange={(event) => updateSex(value, event.target.checked)}
+        />
+        <span
+          className="filter-panel__sex-swatch"
+          style={{ background: sexFillColor(value) }}
+          aria-hidden="true"
         />
         <span>{option.label}</span>
       </label>

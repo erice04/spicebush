@@ -181,7 +181,7 @@
   font-size: var(--map-control-btn-font, 0.95rem);
   font-weight: 600;
   line-height: 1;
-  box-shadow: 0 4px 16px rgba(26, 46, 26, 0.15);
+  box-shadow: 0 6px 20px rgba(26, 46, 26, 0.22);
   backdrop-filter: blur(6px);
   white-space: nowrap;
   transition:
@@ -340,8 +340,8 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 0.08rem;
-  /* Match sex checkbox width + label gap so text lines up with Juvenile/Unknown. */
-  padding-left: calc(0.85rem + 0.4rem);
+  /* Match sex checkbox + swatch + gaps so text lines up with Juvenile/Unknown. */
+  padding-left: calc(0.85rem + 0.4rem + 0.65rem + 0.4rem);
   margin-top: -0.1rem;
 }
 
@@ -379,6 +379,15 @@
   font-size: 0.85rem;
   color: #1a2e1a;
   cursor: pointer;
+}
+
+.filter-panel__sex-swatch {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  border: 1.5px solid #f4f7f0;
+  box-shadow: 0 0 0 1px rgba(45, 74, 45, 0.2);
+  flex-shrink: 0;
 }
 
 .filter-panel__checkbox input {

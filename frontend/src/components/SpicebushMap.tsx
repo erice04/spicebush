@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import type { Polygon } from "geojson";
@@ -12,6 +12,12 @@ import {
   EMPTY_ROUTE_STOPS,
   routeTraceDurationMs,
 } from "../utils/route";
+import {
+  SEX_COLORS,
+  SEX_LEGEND_ITEMS,
+  SEX_MARKER_STROKE,
+  sexCircleColorExpression,
+} from "../theme/sexColors";
 import "./SpicebushMap.css";
 
 const STYLE_URLS: Record<BasemapStyle, string> = {
@@ -144,7 +150,10 @@ function treesToGeoJSON(trees: TreeFeature[]): GeoJSON.FeatureCollection {
     features: trees.map((tree) => ({
       type: "Feature",
       geometry: tree.geometry,
-      properties: { id: tree.properties.id },
+      properties: {
+        id: tree.properties.id,
+        sex: tree.properties.sex ?? "U",
+      },
     })),
   };
 }
@@ -338,8 +347,8 @@ function ensureFocusCircleLayer(map: mapboxgl.Map) {
     filter: ["==", ["get", "id"], -1],
     paint: {
       "circle-radius": isTouchUi() ? 8 : 7,
-      "circle-color": "#3d7a3d",
-      "circle-stroke-color": "#f4f7f0",
+      "circle-color": sexCircleColorExpression(),
+      "circle-stroke-color": SEX_MARKER_STROKE,
       "circle-stroke-width": 2,
       "circle-opacity": 0.92,
     },
@@ -420,12 +429,15 @@ function mapPointFromClient(
   return new mapboxgl.Point(clientX - rect.left, clientY - rect.top);
 }
 
+const DEFAULT_TREE_COLOR = "#3d7a3d";
+
 function applyCircleStyles(
   map: mapboxgl.Map,
   selectedTreeId: number | null,
   highlightedTreeId: number | null,
   excludedIds: number[],
   routeStartTreeId: number | null,
+  colorBySex: boolean,
 ) {
   if (!map.getLayer(TREE_CIRCLE_LAYER)) {
     return;
@@ -434,6 +446,10 @@ function applyCircleStyles(
   ensureFocusCircleLayer(map);
 
   const activeTree = isActiveTreeExpression(selectedTreeId, highlightedTreeId);
+
+  const baseColor = colorBySex
+    ? sexCircleColorExpression()
+    : DEFAULT_TREE_COLOR;
 
   const circleColor: mapboxgl.Expression = [
     "case",
@@ -448,8 +464,8 @@ function applyCircleStyles(
     ["==", ["get", "id"], selectedTreeId ?? -1],
     "#c9781a",
     ["in", ["get", "id"], ["literal", excludedIds]],
-    "#8a968a",
-    "#3d7a3d",
+    SEX_COLORS.unknown,
+    baseColor,
   ];
 
   const circleOpacity: mapboxgl.Expression = [
@@ -478,10 +494,10 @@ function applyCircleStyles(
     ["==", ["get", "id"], highlightedTreeId ?? -1],
     "#2d4a2d",
     ["==", ["get", "id"], selectedTreeId ?? -1],
-    "#f4f7f0",
+    SEX_MARKER_STROKE,
     ["in", ["get", "id"], ["literal", excludedIds]],
     "#d0d8cc",
-    "#f4f7f0",
+    SEX_MARKER_STROKE,
   ];
 
   const circleStrokeWidth: mapboxgl.Expression = [
@@ -555,6 +571,7 @@ export default function SpicebushMap({
   densityHeatmap = false,
   showTreePoints = true,
 }: SpicebushMapProps) {
+  const [colorBySex, setColorBySex] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const drawRef = useRef<MapboxDraw | null>(null);
@@ -564,6 +581,7 @@ export default function SpicebushMap({
   const excludedIdsRef = useRef(manualExcludedIds);
   const densityHeatmapRef = useRef(densityHeatmap);
   const showTreePointsRef = useRef(showTreePoints);
+  const colorBySexRef = useRef(colorBySex);
   const onSelectTreeRef = useRef(onSelectTree);
   const onHoverTreeRef = useRef(onHoverTree);
   const onToggleTreeRef = useRef(onToggleTree);
@@ -592,6 +610,7 @@ export default function SpicebushMap({
   excludedIdsRef.current = manualExcludedIds;
   densityHeatmapRef.current = densityHeatmap;
   showTreePointsRef.current = showTreePoints;
+  colorBySexRef.current = colorBySex;
   onSelectTreeRef.current = onSelectTree;
   onHoverTreeRef.current = onHoverTree;
   onToggleTreeRef.current = onToggleTree;
@@ -1053,6 +1072,7 @@ export default function SpicebushMap({
         null,
         excludedIdsRef.current,
         routeStartTreeIdRef.current,
+        colorBySexRef.current,
       );
       ensureRouteLineLayer(map);
       ensureRouteStopLayer(map);
@@ -1074,8 +1094,8 @@ export default function SpicebushMap({
       source: "spicebush-trees",
       paint: {
         "circle-radius": isTouchUi() ? 8 : 7,
-        "circle-color": "#3d7a3d",
-        "circle-stroke-color": "#f4f7f0",
+        "circle-color": sexCircleColorExpression(),
+        "circle-stroke-color": SEX_MARKER_STROKE,
         "circle-stroke-width": 2,
         "circle-opacity": 0.92,
       },
@@ -1095,6 +1115,7 @@ export default function SpicebushMap({
       null,
       excludedIdsRef.current,
       routeStartTreeIdRef.current,
+      colorBySexRef.current,
     );
     ensureRouteStopLayer(map);
     updateRouteLayers(map);
@@ -1126,6 +1147,7 @@ export default function SpicebushMap({
       style: STYLE_URLS[basemap],
       center: [-72.916, 41.337],
       zoom: 16.5,
+      attributionControl: false,
     });
 
     map.addControl(new mapboxgl.NavigationControl(), "bottom-left");
@@ -1254,6 +1276,7 @@ export default function SpicebushMap({
       highlightedTreeId,
       manualExcludedIds,
       routeStartTreeId,
+      colorBySex,
     );
     applyHeatmapState(map, densityHeatmap, manualExcludedIds);
     applyTreePointVisibility(map, showTreePoints);
@@ -1269,7 +1292,7 @@ export default function SpicebushMap({
         });
       }
     }
-  }, [selectedTreeId, highlightedTreeId, manualExcludedIds, routeStartTreeId, trees, flyToOnSelect, densityHeatmap, showTreePoints]);
+  }, [selectedTreeId, highlightedTreeId, manualExcludedIds, routeStartTreeId, trees, flyToOnSelect, densityHeatmap, showTreePoints, colorBySex]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1359,6 +1382,34 @@ export default function SpicebushMap({
     <div
       ref={containerRef}
       className={`spicebush-map${routeStartPickMode ? " spicebush-map--route-pick" : ""}`}
-    />
+    >
+      <div
+        className={`spicebush-map__sex-legend${colorBySex ? "" : " spicebush-map__sex-legend--collapsed"}`}
+      >
+        <label className="spicebush-map__sex-legend-toggle-row">
+          <span className="spicebush-map__sex-legend-title">Color by sex</span>
+          <input
+            type="checkbox"
+            checked={colorBySex}
+            onChange={(event) => setColorBySex(event.target.checked)}
+            aria-label="Toggle sex-colored map markers"
+          />
+        </label>
+        {colorBySex && (
+          <div className="spicebush-map__sex-legend-body" aria-label="Sex legend">
+            {SEX_LEGEND_ITEMS.map((item) => (
+              <div key={item.key} className="spicebush-map__sex-legend-item">
+                <span
+                  className="spicebush-map__sex-legend-swatch"
+                  style={{ background: item.color }}
+                  aria-hidden="true"
+                />
+                <span className="spicebush-map__sex-legend-label">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
