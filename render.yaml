@@ -4,7 +4,8 @@
 # Setup order after Blueprint creates the services:
 # 1. Neon → copy connection string → spicebush-api DATABASE_URL
 # 2. Deploy API, note its URL (https://spicebush-api.onrender.com)
-# 3. spicebush: VITE_API_URL=<api url>, VITE_MAPBOX_TOKEN=<pk...> → redeploy
+# 3. spicebush: VITE_API_URL=<api url>, VITE_MAPBOX_TOKEN=<pk...>,
+#    VITE_CF_ANALYTICS_TOKEN=<cloudflare web analytics token> → redeploy
 # 4. spicebush-api: CORS_ORIGINS=https://spicebush.onrender.com → redeploy API
 
 services:
@@ -36,4 +37,6 @@ services:
       - key: VITE_API_URL
         sync: false
       - key: VITE_MAPBOX_TOKEN
+        sync: false
+      - key: VITE_CF_ANALYTICS_TOKEN
         sync: false
