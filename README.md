@@ -83,4 +83,4 @@ GPS coordinates are stored as minute offsets from two fixed reference points and
 
 ---
 
-Built from a Yale School of the Environment field study on spicebush morphology, conducted with Professor Queenborough.
+Built from a Yale School of the Environment field study on spicebush morphology between March 2025 - August 2025.
