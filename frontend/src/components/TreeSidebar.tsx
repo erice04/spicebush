@@ -469,7 +469,7 @@ function TreeSidebarCard({
             </dd>
           </div>
           <div>
-            <dt>Base Diam.</dt>
+            <dt>Base diameter</dt>
             <dd>
               {formatMeasurement(view.base_diameter_cm, "cm")}
               {baseGrowth && (
@@ -531,9 +531,6 @@ function TreeSidebarCard({
                     : 1 - sexPrediction.probabilityFemale) * 100
                 ).toFixed(0)}
                 %
-                {!analysisLayout && sexPrediction.uncertain
-                  ? " · uncertain"
-                  : ""}
               </span>
             </p>
           )}

@@ -32,11 +32,11 @@
   z-index: 2;
   width: min(11.5rem, calc(100% - 1.1rem));
   padding: 0.55rem 0.6rem 0.6rem;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid #d4dcc8;
-  box-shadow: 0 6px 20px rgba(26, 46, 26, 0.16);
-  color: #2d4a2d;
+  border-radius: var(--sb-radius-control);
+  background: var(--sb-surface-float);
+  border: 1px solid var(--sb-border);
+  box-shadow: var(--sb-shadow-float);
+  color: var(--sb-ink);
   pointer-events: auto;
 }
 
@@ -90,18 +90,18 @@
 
 .pca-biplot__point-card-metrics dt {
   margin: 0;
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  font-size: var(--sb-text-2xs);
+  font-weight: 650;
+  letter-spacing: var(--sb-tracking-label);
   text-transform: uppercase;
-  color: #6b7f6b;
+  color: var(--sb-ink-muted);
 }
 
 .pca-biplot__point-card-metrics dd {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: var(--sb-text-xs);
   font-weight: 600;
-  color: #2d4a2d;
+  color: var(--sb-ink);
   text-align: right;
 }
 
@@ -112,16 +112,16 @@
 }
 
 .pca-biplot__title {
-  font-size: 1.15rem;
+  font-size: var(--sb-text-display);
   font-weight: 600;
-  fill: #2d4a2d;
+  fill: var(--sb-ink);
 }
 
 .pca-biplot:not(.pca-biplot--popup) .pca-biplot__heading {
   margin: 0 0 0.3rem;
-  font-size: 1.15rem;
+  font-size: var(--sb-text-display);
   font-weight: 600;
-  color: #2d4a2d;
+  color: var(--sb-ink);
   line-height: 1.3;
   flex-shrink: 0;
   align-self: stretch;
@@ -130,8 +130,8 @@
 }
 
 .pca-biplot__axis-label {
-  font-size: 0.78rem;
-  fill: #4a5f4a;
+  font-size: var(--sb-text-sm);
+  fill: var(--sb-ink-secondary);
 }
 
 .pca-biplot__points circle,
@@ -143,8 +143,104 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  font-size: 0.65rem;
-  color: #4a5f4a;
+  font-size: 0.72rem;
+  color: var(--sb-ink-secondary);
+}
+
+.pca-biplot__color-toggle {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-self: center;
+  gap: 0;
+  margin: 0 0 0.35rem;
+  padding: 3px;
+  width: 100%;
+  max-width: 16rem;
+  box-sizing: border-box;
+  border-radius: 999px;
+  border: 1px solid rgba(26, 46, 26, 0.3);
+  background: rgba(26, 46, 26, 0.07);
+  backdrop-filter: blur(8px);
+  isolation: isolate;
+}
+
+/* Subtle divider between the two options */
+.pca-biplot__color-toggle::after {
+  content: "";
+  position: absolute;
+  top: 28%;
+  bottom: 28%;
+  left: 50%;
+  z-index: 0;
+  width: 1px;
+  background: rgba(26, 46, 26, 0.2);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.pca-biplot__color-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(26, 46, 26, 0.2);
+  box-shadow:
+    0 1px 2px rgba(26, 46, 26, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+  transition: transform 0.42s cubic-bezier(0.4, 0.0, 0.2, 1);
+  pointer-events: none;
+  z-index: 1;
+  will-change: transform;
+}
+
+.pca-biplot__color-toggle--predicted .pca-biplot__color-toggle-thumb {
+  transform: translateX(100%);
+}
+
+.pca-biplot__color-option {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  padding: 0.28rem 0.7rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(74, 95, 74, 0.5);
+  font-family: inherit;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 0.22s ease,
+    font-weight 0.22s ease;
+}
+
+.pca-biplot__color-option:hover:not(.pca-biplot__color-option--active) {
+  color: rgba(74, 95, 74, 0.78);
+}
+
+.pca-biplot__color-option--active {
+  color: var(--sb-forest);
+  font-weight: 700;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pca-biplot__color-option:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: 1px;
+}
+
+.pca-biplot__color-option:active {
+  transform: none;
 }
 
 .pca-biplot__legend-grid {
@@ -152,6 +248,26 @@
   grid-template-columns: repeat(3, max-content);
   gap: 0.4rem 1rem;
   justify-content: center;
+}
+
+.pca-biplot__legend-grid--field {
+  grid-template-columns: repeat(4, max-content);
+}
+
+/* Stack both legends so height stays max(field, predicted) when toggling. */
+.pca-biplot__legend-stack {
+  display: grid;
+  justify-items: center;
+  width: 100%;
+}
+
+.pca-biplot__legend-stack > .pca-biplot__legend-grid {
+  grid-area: 1 / 1;
+}
+
+.pca-biplot__legend-grid--inert {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .pca-biplot__legend-item--spacer {
@@ -191,14 +307,50 @@
   grid-template-columns: repeat(3, max-content);
 }
 
-/* Narrow plot: drop spacer and use 2 columns so Uncertain wraps to row 3 */
-@container pca-legend (max-width: 22rem) {
-  .pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-grid {
-    grid-template-columns: repeat(2, max-content);
-  }
+.pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-grid--field {
+  grid-template-columns: repeat(4, max-content);
+}
 
-  .pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-item--spacer {
-    display: none;
+.pca-biplot:not(.pca-biplot--popup) .pca-biplot__intro--fullpage {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.pca-biplot:not(.pca-biplot--popup) .pca-biplot__intro--fullpage .pca-biplot__heading {
+  margin: 0;
+  min-width: 0;
+  width: auto;
+  flex: 1 1 auto;
+  align-self: center;
+}
+
+.pca-biplot:not(.pca-biplot--popup) .pca-biplot__color-toggle {
+  margin: 0;
+  flex: 0 0 auto;
+  align-self: center;
+  width: auto;
+  max-width: min(15.5rem, 52%);
+  border-color: rgba(26, 46, 26, 0.05);
+  box-sizing: border-box;
+}
+
+.pca-biplot:not(.pca-biplot--popup) .pca-biplot__color-toggle::after {
+  content: none;
+}
+
+.pca-biplot:not(.pca-biplot--popup) .pca-biplot__color-option {
+  padding: 0.28rem 0.7rem;
+  font-size: calc(0.62rem * var(--pca-legend-scale));
+}
+
+/* Narrow plot: field legend wraps to 2 columns; keep predicted as 3 so Uncertain stays on row 2 */
+@container pca-legend (max-width: 22rem) {
+  .pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-grid--field {
+    grid-template-columns: repeat(2, max-content);
   }
 }
 
@@ -249,13 +401,16 @@
 
 .pca-biplot__legend-label {
   white-space: nowrap;
+  font-size: 1em;
+  font-weight: 550;
+  color: var(--sb-ink-secondary);
 }
 
 .pca-biplot__swatch {
   width: 0.58rem;
   height: 0.58rem;
   border-radius: 999px;
-  border: 1px solid rgba(45, 74, 45, 0.2);
+  border: 1px solid var(--sb-border);
 }
 
 .pca-biplot__marker {
@@ -273,9 +428,9 @@
 
 .pca-biplot__legend-hint {
   margin: 0;
-  font-size: 0.58rem;
+  font-size: var(--sb-text-2xs);
   font-style: italic;
-  color: #6b7f6b;
+  color: var(--sb-ink-muted);
   line-height: 1.3;
 }
 
@@ -285,9 +440,10 @@
 }
 
 .pca-biplot--popup .pca-biplot__chart {
-  width: 76%;
+  width: 92%;
   margin-inline: auto;
   aspect-ratio: 5 / 3;
+  overflow: visible;
 }
 
 .pca-biplot--popup .pca-biplot__intro {
@@ -303,16 +459,17 @@
   margin: 0;
   font-size: calc(1.12rem * var(--pca-ui-scale));
   font-weight: 600;
-  color: #2d4a2d;
+  color: var(--sb-ink);
 }
 
 .pca-biplot--popup .pca-biplot__legend {
   align-items: center;
   width: 100%;
   min-width: 0;
-  font-size: calc(0.65rem * var(--pca-ui-scale));
-  gap: calc(0.15rem * var(--pca-ui-scale));
-  margin-top: calc(0.1rem * var(--pca-ui-scale));
+  font-size: calc(0.64rem * var(--pca-ui-scale));
+  gap: calc(0.18rem * var(--pca-ui-scale));
+  margin-top: calc(0.2rem * var(--pca-ui-scale));
+  margin-bottom: 0.15rem;
   container-type: inline-size;
   container-name: pca-popup-legend;
 }
@@ -327,19 +484,25 @@
   justify-content: center;
 }
 
-/* Narrow popup: drop spacer so Uncertain wraps to row 3 */
+.pca-biplot--popup .pca-biplot__legend-grid--field {
+  grid-template-columns: repeat(4, max-content);
+}
+
+.pca-biplot--popup .pca-biplot__color-toggle {
+  margin: 0 auto 0.35rem;
+  max-width: min(15.5rem, 86%);
+  flex-shrink: 0;
+}
+
+.pca-biplot--popup .pca-biplot__color-option {
+  padding: calc(0.24rem * var(--pca-ui-scale)) calc(0.55rem * var(--pca-ui-scale));
+  font-size: calc(0.58rem * var(--pca-ui-scale));
+}
+
+/* Narrow popup: field legend wraps; keep predicted 3-col so Uncertain stays with Pred F/M */
 @container pca-popup-legend (max-width: 24rem) {
-  .pca-biplot--popup .pca-biplot__legend-grid {
+  .pca-biplot--popup .pca-biplot__legend-grid--field {
     grid-template-columns: repeat(2, max-content);
-  }
-
-  .pca-biplot--popup .pca-biplot__legend-item--spacer {
-    display: none;
-  }
-
-  .pca-biplot--popup .pca-biplot__legend-item--uncertain {
-    grid-column: 1 / -1;
-    justify-self: center;
   }
 }
 
@@ -364,10 +527,17 @@
   font-size: calc(0.95rem * var(--pca-ui-scale));
 }
 
+.pca-biplot--popup .pca-biplot__svg {
+  overflow: visible;
+}
+
 .pca-biplot--popup .pca-biplot__legend-hint {
-  text-align: center;
-  width: 100%;
+  display: block;
+  margin: 0.1rem auto 0;
+  padding-inline: 0.55rem;
   font-size: calc(0.58rem * var(--pca-ui-scale));
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .pca-biplot--popup .pca-biplot__axis-label {

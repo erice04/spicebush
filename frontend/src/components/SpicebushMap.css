@@ -64,8 +64,37 @@
   box-sizing: border-box;
 }
 
+.spicebush-map .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-icon {
+  background-size: 22px 22px;
+}
+
 .spicebush-map .mapboxgl-ctrl-group {
   box-shadow: 0 4px 16px rgba(26, 46, 26, 0.15);
+}
+
+.spicebush-map .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-group + .mapboxgl-ctrl-group {
+  margin-top: 0.5rem;
+}
+
+/* Detached circular compass */
+.spicebush-map .spicebush-ctrl-compass-group {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.spicebush-map .spicebush-ctrl-compass-group .mapboxgl-ctrl-compass {
+  border-radius: 50%;
+}
+
+.spicebush-map .spicebush-ctrl-compass-group .mapboxgl-ctrl-icon {
+  background-size: 22px 22px;
+}
+
+.spicebush-map .mapboxgl-ctrl-bottom-left button svg {
+  display: block;
+  margin: 0 auto;
 }
 
 .spicebush-map .spicebush-map-ctrl-group .mapbox-gl-draw_ctrl-draw-btn {
@@ -80,11 +109,29 @@
   border-bottom: 0;
   background-repeat: no-repeat;
   background-position: center center;
-  background-size: 24px 24px;
+  background-size: 20px 20px;
+}
+
+.spicebush-map .spicebush-map-ctrl-group .spicebush-ctrl-home-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  padding: 0;
+  color: #333;
+}
+
+.spicebush-map .spicebush-map-ctrl-group .spicebush-ctrl-home-btn .spicebush-ctrl-home-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+  flex-shrink: 0;
 }
 
 .spicebush-map .spicebush-map-ctrl-group button + button {
-  border-top: 1px solid #ddd;
+  border-top: 1px solid #bbb;
 }
 
 .spicebush-map .tree-hover-popup .mapboxgl-popup-content {
@@ -98,3 +145,102 @@
 .spicebush-map .tree-hover-popup .mapboxgl-popup-tip {
   display: none;
 }
+
+.spicebush-map__sex-legend {
+  animation: ui-rise-in 0.28s var(--sb-ease-pop, ease);
+  position: absolute;
+  right: var(--controls-inset, 1.25rem);
+  bottom: calc(var(--overlay-inset, 1.15rem) + 0.85rem);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  box-sizing: border-box;
+  width: var(--map-tool-rail-actual-width, var(--map-tool-rail-width, 6.1rem));
+  max-width: none;
+  min-width: 0;
+  padding: 0.5rem 0.55rem 0.55rem;
+  border-radius: var(--sb-radius-control);
+  border: 1px solid var(--sb-border);
+  background: var(--sb-surface-float);
+  box-shadow: var(--sb-shadow-float);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+  color: var(--sb-ink);
+  line-height: 1.25;
+  font-family: var(--sb-font);
+}
+
+.spicebush-map__sex-legend--closing {
+  animation: ui-rise-out 0.24s ease forwards;
+  pointer-events: none;
+}
+
+.spicebush-map__sex-legend-title {
+  margin: 0;
+  font-size: var(--sb-text-2xs);
+  font-weight: 650;
+  letter-spacing: var(--sb-tracking-label);
+  text-transform: uppercase;
+  color: var(--sb-ink-muted);
+}
+
+.spicebush-map__sex-legend-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+}
+
+.spicebush-map__sex-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.spicebush-map__sex-legend-label {
+  font-size: var(--sb-text-xs);
+  font-weight: 500;
+  color: var(--sb-ink-secondary);
+  letter-spacing: 0.005em;
+}
+
+.spicebush-map__sex-legend-swatch {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--sb-surface-raised);
+  box-shadow: 0 0 0 1px var(--sb-border);
+  flex-shrink: 0;
+}
+
+.spicebush-map__attribution {
+  position: absolute;
+  right: var(--controls-inset, 1.5rem);
+  left: auto;
+  bottom: 0.2rem;
+  z-index: 2;
+  max-width: min(36rem, calc(100% - 10rem));
+  padding: 0.12rem 0.45rem;
+  border-radius: var(--sb-radius-xs);
+  background: rgba(10, 18, 12, 0.42);
+  color: rgba(247, 250, 244, 0.92);
+  font-family: var(--sb-font);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+  text-align: right;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .spicebush-map__attribution {
+    white-space: normal;
+    max-width: calc(100% - 2rem);
+    font-size: 0.55rem;
+  }
+}
+

@@ -12,11 +12,11 @@
 }
 
 .range-slider__label {
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: var(--sb-text-2xs);
+  font-weight: 650;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #6b7f6b;
+  letter-spacing: var(--sb-tracking-label);
+  color: var(--sb-ink-muted);
   flex-shrink: 0;
 }
 
@@ -26,11 +26,11 @@
   }
 
   .range-slider__label {
-    font-size: 0.68rem;
+    font-size: var(--sb-text-2xs);
   }
 
   .range-slider__values {
-    font-size: 0.68rem;
+    font-size: var(--sb-text-xs);
   }
 
   .range-slider__track {
@@ -40,11 +40,11 @@
 
 @media (max-height: 600px) {
   .range-slider__label {
-    font-size: 0.64rem;
+    font-size: var(--sb-text-2xs);
   }
 
   .range-slider__values {
-    font-size: 0.64rem;
+    font-size: var(--sb-text-2xs);
   }
 
   .range-slider__track {
@@ -53,8 +53,8 @@
 }
 
 .range-slider__values {
-  font-size: 0.72rem;
-  color: #6b7f6b;
+  font-size: var(--sb-text-xs);
+  color: var(--sb-ink-muted);
   white-space: nowrap;
   flex-shrink: 1;
   min-width: 0;
@@ -79,11 +79,11 @@
 .range-slider__track-bg {
   left: 7px;
   right: 7px;
-  background: #d8e2d0;
+  background: var(--sb-surface-tint);
 }
 
 .range-slider__track-fill {
-  background: #3d7a3d;
+  background: var(--sb-accent);
 }
 
 .range-slider__thumb {
@@ -118,9 +118,9 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid #f4f7f0;
-  background: #3d7a3d;
-  box-shadow: 0 1px 4px rgba(26, 46, 26, 0.25);
+  border: 2px solid var(--sb-surface-raised);
+  background: var(--sb-accent);
+  box-shadow: var(--sb-shadow-xs);
   cursor: grab;
   margin-top: -5px;
 }
@@ -130,9 +130,9 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid #f4f7f0;
-  background: #3d7a3d;
-  box-shadow: 0 1px 4px rgba(26, 46, 26, 0.25);
+  border: 2px solid var(--sb-surface-raised);
+  background: var(--sb-accent);
+  box-shadow: var(--sb-shadow-xs);
   cursor: grab;
 }
 
@@ -142,11 +142,11 @@
 }
 
 .range-slider__thumb:focus-visible::-webkit-slider-thumb {
-  outline: 2px solid #2d4a2d;
+  outline: 2px solid var(--sb-forest);
   outline-offset: 2px;
 }
 
 .range-slider__thumb:focus-visible::-moz-range-thumb {
-  outline: 2px solid #2d4a2d;
+  outline: 2px solid var(--sb-forest);
   outline-offset: 2px;
 }

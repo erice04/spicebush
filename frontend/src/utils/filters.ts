@@ -21,9 +21,9 @@ export const PREDICTED_SEX_OPTIONS: {
   value: PredictedSexCategory;
   label: string;
 }[] = [
-  { value: "M", label: "M" },
-  { value: "F", label: "F" },
-  { value: "uncertain", label: "?" },
+  { value: "M", label: "Male" },
+  { value: "F", label: "Female" },
+  { value: "uncertain", label: "Uncertain" },
 ];
 
 export type SexPredictionById = Map<

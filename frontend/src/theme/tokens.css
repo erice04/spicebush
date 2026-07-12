@@ -1,0 +1,105 @@
+/**
+ * Spicebush design tokens — forest / field-research GIS aesthetic.
+ * Inspired by patterns from ArcGIS / Calcite: map-first chrome, dense type,
+ * layered surfaces, restrained elevation.
+ */
+:root {
+  /* Ink */
+  --sb-ink: #1a2e1a;
+  --sb-ink-secondary: #4a5f4a;
+  --sb-ink-muted: #6b7f6b;
+  --sb-ink-faint: #8a968a;
+
+  /* Forest brand — original Spicebush dark green */
+  --sb-forest-deep: #1a2e1a;
+  --sb-forest: #243d24;
+  --sb-forest-mid: #2d4a2d;
+  --sb-forest-bright: #355635;
+  --sb-accent: #3d7a3d;
+  --sb-accent-strong: #356a35;
+  --sb-accent-soft: #e4ebdc;
+
+  /* Surfaces */
+  --sb-canvas: #f4f7f0;
+  --sb-surface: #fcfdfb;
+  --sb-surface-raised: #ffffff;
+  --sb-surface-muted: #eef3e8;
+  --sb-surface-tint: #e4ebdc;
+  --sb-surface-float: rgba(255, 255, 255, 0.96);
+
+  /* Lines */
+  --sb-border: rgba(26, 46, 26, 0.24);
+  --sb-border-strong: rgba(26, 46, 26, 0.34);
+  --sb-border-soft: rgba(26, 46, 26, 0.15);
+  --sb-divider: rgba(26, 46, 26, 0.2);
+
+  /* Header */
+  --sb-header-fg: #f4f7f0;
+  --sb-header-fg-muted: rgba(244, 247, 240, 0.58);
+  --sb-header-fg-soft: rgba(244, 247, 240, 0.78);
+  --sb-header-chip: rgba(255, 255, 255, 0.12);
+  --sb-header-chip-active-bg: #f4f7f0;
+  --sb-header-chip-active-fg: #2d4a2d;
+
+  /* Elevation (GIS chrome: soft, multi-stop, not glow-heavy) */
+  --sb-shadow-xs: 0 1px 2px rgba(26, 46, 26, 0.05);
+  --sb-shadow-float:
+    0 1px 2px rgba(26, 46, 26, 0.05),
+    0 6px 18px rgba(26, 46, 26, 0.12);
+  --sb-shadow-panel:
+    0 2px 4px rgba(26, 46, 26, 0.04),
+    0 12px 28px rgba(26, 46, 26, 0.14);
+  --sb-shadow-dialog:
+    0 4px 10px rgba(26, 46, 26, 0.06),
+    0 22px 48px rgba(26, 46, 26, 0.2);
+
+  /* Radii — controls are soft-rect (Esri-like), not consumer pills */
+  --sb-radius-xs: 4px;
+  --sb-radius-sm: 6px;
+  --sb-radius-md: 8px;
+  --sb-radius-lg: 10px;
+  --sb-radius-xl: 12px;
+  --sb-radius-control: 8px;
+
+  /* Type */
+  --sb-font: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --sb-font-mono: "Cascadia Mono", Consolas, "Courier New", monospace;
+  --sb-text-2xs: 0.625rem;
+  --sb-text-xs: 0.6875rem;
+  --sb-text-sm: 0.75rem;
+  --sb-text-md: 0.8125rem;
+  --sb-text-lg: 0.875rem;
+  --sb-text-xl: 1.05rem;
+  --sb-text-display: 1.35rem;
+  --sb-tracking-label: 0.055em;
+
+  /* Motion */
+  --sb-ease-pop: cubic-bezier(0.16, 1, 0.3, 1);
+  --sb-ease-out: cubic-bezier(0.2, 0.8, 0.3, 1);
+
+  /* Shared map chrome */
+  --sb-control-height: 2.35rem;
+  --sb-control-font: 0.8rem;
+  --sb-control-pad-x: 0.9rem;
+  --sb-control-gap: 0.4rem;
+
+  /* Shared docked panel chrome (Layers / Filters / Route / Analysis popup) */
+  --sb-dock-header-pad-y: 0.7rem;
+  --sb-dock-header-pad-x: 0.75rem;
+  --sb-dock-body-pad-y: 0.7rem;
+  --sb-dock-body-pad-x: 0.75rem;
+  --sb-dock-title-size: var(--sb-text-lg);
+  --sb-dock-title-weight: 650;
+  --sb-dock-subtitle-size: var(--sb-text-xs);
+  --sb-dock-section-size: var(--sb-text-2xs);
+  --sb-dock-body-size: var(--sb-text-sm);
+  --sb-dock-hint-size: var(--sb-text-2xs);
+  --sb-dock-close-size: 1.55rem;
+  --sb-dock-close-font: 1.05rem;
+  --sb-dock-icon-size: 14px;
+
+  --sb-danger: #8b2e2e;
+  --sb-danger-bg: #f7ecec;
+  --sb-warning-bg: #f7f1e4;
+  --sb-warning-ink: #6b5a2e;
+}

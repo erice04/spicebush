@@ -49,13 +49,13 @@
       },
       "properties": {
         "id": 2,
-        "stem_count": "3",
-        "base_diameter_cm": 3.0,
-        "dbh_cm": 3.0,
-        "height_m": 3.0,
+        "stem_count": "2",
+        "base_diameter_cm": 2.9,
+        "dbh_cm": 1.95,
+        "height_m": 1.7,
         "sex": "F",
-        "notes": null,
-        "observed_ym": "2026-07",
+        "notes": "also Male",
+        "observed_ym": "2025-03",
         "measurements": [
           {
             "observed_ym": "2025-03",
@@ -65,22 +65,13 @@
             "height_m": 1.7,
             "sex": "F",
             "notes": "also Male"
-          },
-          {
-            "observed_ym": "2026-07",
-            "stem_count": "3",
-            "base_diameter_cm": 3.0,
-            "dbh_cm": 3.0,
-            "height_m": 3.0,
-            "sex": "F",
-            "notes": null
           }
         ],
         "growth": {
-          "dbh_cm_per_month": 0.065625,
-          "base_diameter_cm_per_month": 0.0062500000000000056,
-          "stem_count_per_month": 0.0625,
-          "height_m_per_month": 0.08125
+          "dbh_cm_per_month": null,
+          "base_diameter_cm_per_month": null,
+          "stem_count_per_month": null,
+          "height_m_per_month": null
         }
       }
     },

@@ -1,31 +1,48 @@
 .help-panel__fab {
   box-sizing: border-box;
   flex-shrink: 0;
-  display: inline-grid;
-  place-items: center;
-  border: 1px solid #d4dcc8;
-  background: rgba(255, 255, 255, 0.96);
-  color: #2d4a2d;
-  width: var(--map-control-btn-height, 2.7rem);
-  height: var(--map-control-btn-height, 2.7rem);
-  padding: 0;
-  border-radius: 50%;
-  font-size: var(--map-control-fab-font, 1.15rem);
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  border: 1px solid var(--sb-border);
+  background: var(--sb-surface-float);
+  color: var(--sb-ink);
+  height: var(--map-control-btn-height, var(--sb-control-height));
+  padding: 0 var(--map-control-btn-pad-x, var(--sb-control-pad-x));
+  border-radius: var(--sb-radius-control);
+  font-size: var(--map-control-btn-font, var(--sb-control-font));
+  font-weight: 600;
+  letter-spacing: 0.01em;
   line-height: 1;
-  box-shadow: 0 4px 16px rgba(26, 46, 26, 0.15);
-  backdrop-filter: blur(6px);
+  box-shadow: var(--sb-shadow-float);
+  backdrop-filter: blur(10px);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
 }
 
 .help-panel__fab:hover {
-  background: #f4f7f0;
+  background: var(--sb-surface-raised);
+  border-color: var(--sb-border-strong);
+}
+
+.help-panel__fab:active {
+  transform: translateY(0.5px);
+}
+
+.help-panel__fab--active {
+  background: var(--sb-surface-raised);
+  border-color: var(--sb-accent-soft);
+  box-shadow: var(--sb-shadow-float), inset 0 0 0 1px rgba(61, 122, 61, 0.14);
 }
 
 .help-panel__backdrop {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(26, 46, 26, 0.35);
+  background: rgba(18, 26, 20, 0.38);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -44,10 +61,13 @@
   width: min(32rem, 100%);
   height: min(36.5rem, calc(100vh - 2 * var(--overlay-inset, 1.25rem)));
   overflow: hidden;
-  padding: 1.1rem 1.25rem 0.45rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 12px 40px rgba(26, 46, 26, 0.22);
+  /* Tight right edge so the scrollbar hugs the box; body re-insets content. */
+  padding: 1.1rem 0.5rem 0.55rem 1.25rem;
+  background: var(--sb-surface-raised);
+  border: 1px solid var(--sb-border);
+  border-radius: var(--sb-radius-lg);
+  box-shadow: var(--sb-shadow-dialog);
+  color: var(--sb-ink);
   container-type: inline-size;
   animation: ui-scale-in 0.22s ease;
 }
@@ -60,7 +80,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding-right: 0.15rem;
+  padding-right: 0.65rem;
+  padding-bottom: 1rem;
   scrollbar-width: thin;
   scrollbar-color: rgba(45, 74, 45, 0.28) transparent;
 }
@@ -98,22 +119,22 @@
 .help-panel__tab {
   flex: 1 1 calc(50% - 0.175rem);
   max-width: calc(50% - 0.175rem);
-  border: 1px solid #d4dcc8;
-  background: rgba(255, 255, 255, 0.55);
-  color: #6b7f6b;
+  border: 1px solid var(--sb-border);
+  background: var(--sb-surface-muted);
+  color: var(--sb-ink-muted);
   padding: 0.48rem 0.4rem;
-  border-radius: 8px;
-  font-size: 0.74rem;
+  border-radius: var(--sb-radius-control);
+  font-size: var(--sb-text-xs);
   font-weight: 600;
   line-height: 1.2;
   white-space: normal;
   text-align: center;
   transition:
-    background 0.18s ease,
-    color 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.15s ease;
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
 }
 
 @container (min-width: 20rem) {
@@ -124,19 +145,20 @@
 }
 
 .help-panel__tab:hover {
-  background: rgba(255, 255, 255, 0.9);
-  color: #2d4a2d;
+  background: var(--sb-surface-raised);
+  color: var(--sb-ink);
+  border-color: var(--sb-border-strong);
 }
 
 .help-panel__tab:active {
-  transform: scale(0.98);
+  transform: translateY(0.5px);
 }
 
 .help-panel__tab--active {
-  background: #eef3e8;
-  color: #2d4a2d;
-  border-color: #3d7a3d;
-  box-shadow: inset 0 -2px 0 #3d7a3d;
+  background: var(--sb-surface-muted);
+  color: var(--sb-ink);
+  border-color: var(--sb-accent);
+  box-shadow: inset 0 -2px 0 var(--sb-accent);
   font-weight: 650;
 }
 
@@ -152,9 +174,9 @@
 
 .help-panel__intro {
   margin: 0;
-  font-size: 0.78rem;
-  line-height: 1.45;
-  color: #4a5c4a;
+  font-size: var(--sb-text-sm);
+  line-height: 1.5;
+  color: var(--sb-ink-secondary);
   font-style: italic;
 }
 
@@ -162,9 +184,10 @@
   flex-shrink: 0;
   margin: auto 0 0;
   padding: 0.55rem 0 0;
-  font-size: 0.72rem;
-  line-height: 1.4;
-  color: #5a6b5a;
+  border-top: 1px solid var(--sb-divider);
+  font-size: var(--sb-text-xs);
+  line-height: 1.45;
+  color: var(--sb-ink-muted);
   font-style: italic;
 }
 
@@ -174,11 +197,11 @@
 
 .help-panel__section h3 {
   margin: 0 0 0.35rem;
-  font-size: 0.9rem;
+  font-size: var(--sb-text-sm);
   font-weight: 650;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #2d4a2d;
+  letter-spacing: var(--sb-tracking-label);
+  color: var(--sb-ink);
 }
 
 .help-panel__section p {
@@ -220,7 +243,7 @@
   width: 100%;
   margin: 0 auto;
   border-radius: 4px;
-  border: 1px solid #d4dcc8;
+  border: 1px solid #b0c0a4;
   background: #f7faf4;
 }
 
@@ -294,33 +317,36 @@
 
 .help-panel__header h2 {
   margin: 0;
-  font-size: 1.2rem;
-  color: #2d4a2d;
+  font-size: var(--sb-text-display);
+  color: var(--sb-ink);
 }
 
 .help-panel__close {
   box-sizing: border-box;
   display: inline-grid;
   place-items: center;
-  border: 1px solid #d4dcc8;
-  background: #eef3e8;
-  color: #2d4a2d;
+  border: 1px solid var(--sb-border);
+  background: var(--sb-surface-muted);
+  color: var(--sb-ink);
   width: 1.625rem;
   height: 1.625rem;
   aspect-ratio: 1;
   padding: 0 0 0.14em;
-  border-radius: 6px;
+  border-radius: var(--sb-radius-sm);
   font-size: 1.25rem;
   font-weight: 400;
   line-height: 1;
   flex-shrink: 0;
   cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .help-panel__close:hover {
-  background: #e4ebdc;
-  border-color: #b7c6b0;
-  color: #1a2e1a;
+  background: var(--sb-surface-tint);
+  border-color: var(--sb-border-strong);
+  color: var(--sb-ink);
 }
 
 .help-panel__list {
