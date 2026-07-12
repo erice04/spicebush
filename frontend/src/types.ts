@@ -42,7 +42,7 @@ export interface TreeFeatureCollection {
   features: TreeFeature[];
 }
 
-export type BasemapStyle = "satellite" | "terrain";
+export type BasemapStyle = "terrain" | "aerial" | "satellite";
 
 export type SexCategory = "M" | "F" | "J" | "U";
 

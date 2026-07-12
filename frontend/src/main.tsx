@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import App from "./App";
 import DataPage from "./pages/DataPage";
 import { initAnalytics } from "./analytics";
+import "./theme/tokens.css";
 import "./index.css";
 
 initAnalytics();

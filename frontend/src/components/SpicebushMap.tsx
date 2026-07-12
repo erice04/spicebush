@@ -18,12 +18,14 @@ import {
   SEX_MARKER_STROKE,
   sexCircleColorExpression,
 } from "../theme/sexColors";
+import {
+  applyFieldResearchCartography,
+  getBasemapAttribution,
+  getBasemapStyleUrl,
+  usesCtAerialOverlay,
+} from "../map/basemapStyles";
+import { useCloseAnimation } from "../hooks/useCloseAnimation";
 import "./SpicebushMap.css";
-
-const STYLE_URLS: Record<BasemapStyle, string> = {
-  satellite: "mapbox://styles/mapbox/satellite-streets-v12",
-  terrain: "mapbox://styles/mapbox/outdoors-v12",
-};
 
 const TRAIL_OUTLINE_COLOR = "#a8a092";
 const TRAIL_OUTLINE_ORANGE = "hsl(35, 80%, 48%)";
@@ -83,6 +85,11 @@ function applyTrailBorderColorOverride(map: mapboxgl.Map, basemap: BasemapStyle)
   }
 }
 
+function applyBasemapPresentation(map: mapboxgl.Map, basemap: BasemapStyle) {
+  applyFieldResearchCartography(map, basemap);
+  applyTrailBorderColorOverride(map, basemap);
+}
+
 interface SpicebushMapProps {
   trees: TreeFeature[];
   basemap: BasemapStyle;
@@ -106,6 +113,7 @@ interface SpicebushMapProps {
   flyToOnSelect?: boolean;
   densityHeatmap?: boolean;
   showTreePoints?: boolean;
+  colorBySex?: boolean;
 }
 
 function getOverlayInsetPx(container: HTMLElement): number {
@@ -168,6 +176,64 @@ function patchDrawControlTitles(map: mapboxgl.Map) {
 
   polygonButton?.setAttribute("title", "Polygon Tool");
   trashButton?.setAttribute("title", "Delete selection");
+}
+
+const HOME_ICON_SVG =
+  '<svg class="spicebush-ctrl-home-icon" width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.1 2.2 7.4h1.6v6h3.4V9.6h1.6v3.8h3.4v-6h1.6L8 2.1Z" fill="currentColor"/></svg>';
+
+/** Custom "reset view" control; merged into the main bottom-left toolbar. */
+class HomeControl implements mapboxgl.IControl {
+  private container: HTMLElement | null = null;
+
+  constructor(private readonly onActivate: () => void) {}
+
+  onAdd(): HTMLElement {
+    const container = document.createElement("div");
+    container.className =
+      "mapboxgl-ctrl mapboxgl-ctrl-group spicebush-ctrl-home";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "spicebush-ctrl-home-btn";
+    button.title = "Reset view to survey area";
+    button.setAttribute("aria-label", "Reset view to survey area");
+    button.innerHTML = HOME_ICON_SVG;
+    button.addEventListener("click", this.onActivate);
+    container.appendChild(button);
+    this.container = container;
+    return container;
+  }
+
+  onRemove(): void {
+    this.container?.remove();
+    this.container = null;
+  }
+}
+
+function mergeHomeIntoNavigation(map: mapboxgl.Map) {
+  const corner = map
+    .getContainer()
+    .querySelector<HTMLElement>(".mapboxgl-ctrl-bottom-left");
+  const homeGroup = corner?.querySelector<HTMLElement>(".spicebush-ctrl-home");
+  const zoomGroup = corner
+    ?.querySelector<HTMLElement>(".mapboxgl-ctrl-zoom-in")
+    ?.closest<HTMLElement>(".mapboxgl-ctrl-group");
+  const homeButton = homeGroup?.querySelector("button");
+  if (!homeGroup || !zoomGroup || !homeButton) {
+    return;
+  }
+  zoomGroup.appendChild(homeButton);
+  homeGroup.remove();
+}
+
+/** The compass renders as its own detached circular control. */
+function markCompassGroup(map: mapboxgl.Map) {
+  map
+    .getContainer()
+    .querySelector<HTMLElement>(
+      ".mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-compass",
+    )
+    ?.closest<HTMLElement>(".mapboxgl-ctrl-group")
+    ?.classList.add("spicebush-ctrl-compass-group");
 }
 
 function mergeDrawControlsIntoNavigation(map: mapboxgl.Map) {
@@ -570,8 +636,8 @@ export default function SpicebushMap({
   flyToOnSelect = true,
   densityHeatmap = false,
   showTreePoints = true,
+  colorBySex = true,
 }: SpicebushMapProps) {
-  const [colorBySex, setColorBySex] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const drawRef = useRef<MapboxDraw | null>(null);
@@ -698,43 +764,73 @@ export default function SpicebushMap({
   );
 
   const ensureRouteLineLayer = useCallback((map: mapboxgl.Map) => {
-    if (map.getSource("survey-route-line")) {
+    // addSource/addLayer throw if the style is still loading (common on first mount).
+    if (!map.isStyleLoaded()) {
       return;
     }
 
-    map.addSource("survey-route-line", {
-      type: "geojson",
-      data: routeLineRef.current,
-    });
+    if (!map.getSource("survey-route-line")) {
+      map.addSource("survey-route-line", {
+        type: "geojson",
+        data: routeLineRef.current,
+      });
+    }
 
-    const beforeLayer = map.getLayer("spicebush-circles")
-      ? "spicebush-circles"
-      : undefined;
+    // Keep the line above the heatmap and under tree circles/stops so it stays
+    // visible when density is on (stops were already on top — numbers showed).
+    const beforeLayer = map.getLayer(TREE_CIRCLE_LAYER)
+      ? TREE_CIRCLE_LAYER
+      : map.getLayer("survey-route-stops")
+        ? "survey-route-stops"
+        : undefined;
 
-    map.addLayer(
-      {
-        id: "survey-route-line",
-        type: "line",
-        source: "survey-route-line",
-        paint: {
-          "line-color": "#c9781a",
-          "line-width": 2.5,
-          "line-opacity": 0.9,
+    if (!map.getLayer("survey-route-line")) {
+      map.addLayer(
+        {
+          id: "survey-route-line",
+          type: "line",
+          source: "survey-route-line",
+          paint: {
+            "line-color": "#c9781a",
+            "line-width": 2.5,
+            "line-opacity": 0.9,
+          },
         },
-      },
-      beforeLayer,
-    );
+        beforeLayer,
+      );
+      return;
+    }
+
+    try {
+      map.setLayoutProperty("survey-route-line", "visibility", "visible");
+    } catch {
+      // Layer may be mid-teardown during a style swap.
+    }
+
+    if (beforeLayer) {
+      try {
+        map.moveLayer("survey-route-line", beforeLayer);
+      } catch {
+        // Layer order is best-effort if the stack changed mid-update.
+      }
+    }
   }, []);
 
   const ensureRouteStopLayer = useCallback((map: mapboxgl.Map) => {
-    if (map.getSource("survey-route-stops")) {
+    if (!map.isStyleLoaded()) {
       return;
     }
 
-    map.addSource("survey-route-stops", {
-      type: "geojson",
-      data: routeStopsRef.current,
-    });
+    if (!map.getSource("survey-route-stops")) {
+      map.addSource("survey-route-stops", {
+        type: "geojson",
+        data: routeStopsRef.current,
+      });
+    }
+
+    if (map.getLayer("survey-route-stops")) {
+      return;
+    }
 
     map.addLayer({
       id: "survey-route-stops",
@@ -1081,8 +1177,6 @@ export default function SpicebushMap({
       return;
     }
 
-    ensureRouteLineLayer(map);
-
     map.addSource("spicebush-trees", {
       type: "geojson",
       data: treesToGeoJSON(treesRef.current),
@@ -1117,6 +1211,8 @@ export default function SpicebushMap({
       routeStartTreeIdRef.current,
       colorBySexRef.current,
     );
+    // Line must be ensured after circles/heatmap so it sits above the heatmap.
+    ensureRouteLineLayer(map);
     ensureRouteStopLayer(map);
     updateRouteLayers(map);
     attachTreeInteractionHandlers(map);
@@ -1124,7 +1220,7 @@ export default function SpicebushMap({
 
   const initializeMapContent = useCallback(
     (map: mapboxgl.Map) => {
-      applyTrailBorderColorOverride(map, basemap);
+      applyBasemapPresentation(map, basemap);
       addTreeLayer(map);
       setupDrawControl(map);
     },
@@ -1144,23 +1240,40 @@ export default function SpicebushMap({
 
     const map = new mapboxgl.Map({
       container: containerRef.current,
-      style: STYLE_URLS[basemap],
+      style: getBasemapStyleUrl(basemap),
       center: [-72.916, 41.337],
       zoom: 16.5,
+      maxZoom: 21,
       attributionControl: false,
     });
 
-    map.addControl(new mapboxgl.NavigationControl(), "bottom-left");
-    map.doubleClickZoom.disable();
-    map.on("load", () => {
-      prevBasemap.current = basemap;
-      initializeMapContentRef.current(map);
-
+    const fitSurveyBounds = (duration: number) => {
+      if (treesRef.current.length === 0) {
+        return;
+      }
       const bounds = new mapboxgl.LngLatBounds();
       treesRef.current.forEach((tree) => {
         bounds.extend(tree.geometry.coordinates);
       });
-      map.fitBounds(bounds, { padding: 80, maxZoom: 17, duration: 0 });
+      map.fitBounds(bounds, { padding: 120, maxZoom: 17.5, duration });
+    };
+
+    map.addControl(
+      new mapboxgl.NavigationControl({ showCompass: false }),
+      "bottom-left",
+    );
+    map.addControl(new HomeControl(() => fitSurveyBounds(900)), "bottom-left");
+    map.addControl(
+      new mapboxgl.NavigationControl({ showZoom: false, visualizePitch: true }),
+      "bottom-left",
+    );
+    mergeHomeIntoNavigation(map);
+    markCompassGroup(map);
+    map.doubleClickZoom.disable();
+    map.on("load", () => {
+      prevBasemap.current = basemap;
+      initializeMapContentRef.current(map);
+      fitSurveyBounds(0);
       map.resize();
     });
 
@@ -1209,14 +1322,31 @@ export default function SpicebushMap({
     }
 
     if (prevBasemap.current === basemap) return;
+
+    const previousBasemap = prevBasemap.current;
     prevBasemap.current = basemap;
+
+    const previousUrl = getBasemapStyleUrl(previousBasemap);
+    const nextUrl = getBasemapStyleUrl(basemap);
+    const sameUrl = previousUrl === nextUrl;
 
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
 
+    // Summer and Spring both use Streets + a CT raster overlay. Mapbox will not
+    // re-fire style.load for the same URL, so swap overlays in place.
+    if (sameUrl && prefersReducedMotion) {
+      applyBasemapPresentation(map, basemap);
+      ensureRouteLineLayer(map);
+      ensureRouteStopLayer(map);
+      updateRouteLayers(map);
+      return;
+    }
+
     let cancelled = false;
     let fadeInTimer: number | null = null;
+    let swapTimer: number | null = null;
     const fadeMs = 280;
     const startedAt = performance.now();
 
@@ -1224,7 +1354,9 @@ export default function SpicebushMap({
       if (cancelled) {
         return;
       }
-      initializeMapContentRef.current(map);
+      if (!sameUrl) {
+        initializeMapContentRef.current(map);
+      }
       const elapsed = performance.now() - startedAt;
       const wait = prefersReducedMotion ? 0 : Math.max(0, fadeMs - elapsed);
       fadeInTimer = window.setTimeout(() => {
@@ -1239,18 +1371,36 @@ export default function SpicebushMap({
       container.classList.add("spicebush-map--style-swap");
     }
 
-    map.once("style.load", reveal);
-    map.setStyle(STYLE_URLS[basemap]);
+    if (sameUrl) {
+      // Swap the raster overlay behind the fade, then reveal once tiles settle.
+      swapTimer = window.setTimeout(() => {
+        if (cancelled) {
+          return;
+        }
+        applyBasemapPresentation(map, basemap);
+        ensureRouteLineLayer(map);
+        ensureRouteStopLayer(map);
+        updateRouteLayers(map);
+        map.once("idle", reveal);
+      }, fadeMs);
+    } else {
+      map.once("style.load", reveal);
+      map.setStyle(nextUrl);
+    }
 
     return () => {
       cancelled = true;
       if (fadeInTimer !== null) {
         window.clearTimeout(fadeInTimer);
       }
+      if (swapTimer !== null) {
+        window.clearTimeout(swapTimer);
+      }
       map.off("style.load", reveal);
+      map.off("idle", reveal);
       container.classList.remove("spicebush-map--style-swap");
     };
-  }, [basemap]);
+  }, [basemap, ensureRouteLineLayer, ensureRouteStopLayer, updateRouteLayers]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1280,6 +1430,7 @@ export default function SpicebushMap({
     );
     applyHeatmapState(map, densityHeatmap, manualExcludedIds);
     applyTreePointVisibility(map, showTreePoints);
+    ensureRouteLineLayer(map);
 
     if (selectedTreeId !== null && flyToOnSelect) {
       const tree = trees.find((t) => t.properties.id === selectedTreeId);
@@ -1292,11 +1443,20 @@ export default function SpicebushMap({
         });
       }
     }
-  }, [selectedTreeId, highlightedTreeId, manualExcludedIds, routeStartTreeId, trees, flyToOnSelect, densityHeatmap, showTreePoints, colorBySex]);
+  }, [selectedTreeId, highlightedTreeId, manualExcludedIds, routeStartTreeId, trees, flyToOnSelect, densityHeatmap, showTreePoints, colorBySex, ensureRouteLineLayer]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.getSource("survey-route-line")) {
+    // Wait until map content exists — creating route layers before style load
+    // throws and can blank the page on first mount.
+    if (!map || !map.isStyleLoaded() || !map.getSource("spicebush-trees")) {
+      return;
+    }
+
+    ensureRouteLineLayer(map);
+    ensureRouteStopLayer(map);
+
+    if (!map.getSource("survey-route-line")) {
       return;
     }
 
@@ -1366,6 +1526,8 @@ export default function SpicebushMap({
     routeLine,
     routeStops,
     cancelRouteAnimation,
+    ensureRouteLineLayer,
+    ensureRouteStopLayer,
     setRouteLayerData,
   ]);
 
@@ -1378,25 +1540,48 @@ export default function SpicebushMap({
     map.getCanvas().style.cursor = routeStartPickMode ? "crosshair" : "";
   }, [routeStartPickMode]);
 
+  const sexLegendVisible = colorBySex && showTreePoints;
+  const [sexLegendPresent, setSexLegendPresent] = useState(sexLegendVisible);
+  const { closing: sexLegendClosing, beginClose: beginSexLegendClose } =
+    useCloseAnimation(240);
+
+  useEffect(() => {
+    if (sexLegendVisible) {
+      setSexLegendPresent(true);
+      return;
+    }
+    if (!sexLegendPresent || sexLegendClosing) {
+      return;
+    }
+    beginSexLegendClose(() => setSexLegendPresent(false));
+  }, [
+    sexLegendVisible,
+    sexLegendPresent,
+    sexLegendClosing,
+    beginSexLegendClose,
+  ]);
+
   return (
     <div
       ref={containerRef}
       className={`spicebush-map${routeStartPickMode ? " spicebush-map--route-pick" : ""}`}
     >
-      <div
-        className={`spicebush-map__sex-legend${colorBySex ? "" : " spicebush-map__sex-legend--collapsed"}`}
-      >
-        <label className="spicebush-map__sex-legend-toggle-row">
-          <span className="spicebush-map__sex-legend-title">Color by sex</span>
-          <input
-            type="checkbox"
-            checked={colorBySex}
-            onChange={(event) => setColorBySex(event.target.checked)}
-            aria-label="Toggle sex-colored map markers"
-          />
-        </label>
-        {colorBySex && (
-          <div className="spicebush-map__sex-legend-body" aria-label="Sex legend">
+      {sexLegendPresent && (
+        <div
+          className={`spicebush-map__sex-legend${
+            sexLegendClosing ? " spicebush-map__sex-legend--closing" : ""
+          }`}
+          aria-label="Sex legend"
+          aria-hidden={sexLegendClosing}
+          onPointerDown={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+          onTouchStart={(event) => event.stopPropagation()}
+          onWheel={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => event.stopPropagation()}
+          onContextMenu={(event) => event.preventDefault()}
+        >
+          <p className="spicebush-map__sex-legend-title">Sex</p>
+          <div className="spicebush-map__sex-legend-body">
             {SEX_LEGEND_ITEMS.map((item) => (
               <div key={item.key} className="spicebush-map__sex-legend-item">
                 <span
@@ -1404,12 +1589,19 @@ export default function SpicebushMap({
                   style={{ background: item.color }}
                   aria-hidden="true"
                 />
-                <span className="spicebush-map__sex-legend-label">{item.label}</span>
+                <span className="spicebush-map__sex-legend-label">
+                  {item.label}
+                </span>
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+      {usesCtAerialOverlay(basemap) && getBasemapAttribution(basemap) && (
+        <div className="spicebush-map__attribution" aria-hidden="true">
+          {getBasemapAttribution(basemap)}
+        </div>
+      )}
     </div>
   );
 }

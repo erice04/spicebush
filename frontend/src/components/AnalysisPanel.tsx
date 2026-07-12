@@ -6,7 +6,11 @@ import type {
 } from "../types/analysis";
 import type { TreeFeature } from "../types";
 import { useCloseAnimation } from "../hooks/useCloseAnimation";
-import PcaBiplot from "./PcaBiplot";
+import { IconAnalysis } from "./railIcons";
+import PcaBiplot, {
+  PcaColorModeToggle,
+  type PcaColorMode,
+} from "./PcaBiplot";
 import "./AnalysisPanel.css";
 
 type AnalysisDepth = "brief" | "technical";
@@ -284,7 +288,8 @@ function AnalysisPopup({
   const popupRef = useRef<HTMLDivElement>(null);
   const dormantRef = useRef(dormant);
   const skipEnterRef = useRef(dormant);
-  const { closing, beginClose } = useCloseAnimation();
+  const { closing, beginClose } = useCloseAnimation(220);
+  const [colorMode, setColorMode] = useState<PcaColorMode>("predicted");
 
   dormantRef.current = dormant;
   if (dormant) {
@@ -322,21 +327,34 @@ function AnalysisPopup({
   return (
     <div
       ref={popupRef}
-      className={`analysis-popup${closing ? " analysis-popup--closing" : ""}${
+      className={`analysis-popup sb-dock-panel${closing ? " analysis-popup--closing" : ""}${
         skipEnterRef.current || dormant ? " analysis-popup--no-enter" : ""
       }${dormant ? " analysis-popup--dormant" : ""}`}
       role="dialog"
-      aria-label="Morphology plot"
+      aria-label="Analysis"
       aria-hidden={dormant}
     >
-      <button
-        type="button"
-        className="analysis-popup__close"
-        onClick={handleClose}
-        aria-label="Close analysis"
-      >
-        ×
-      </button>
+      <div className="analysis-popup__header sb-dock-panel__header">
+        <div className="sb-dock-panel__title-row">
+          <IconAnalysis />
+          <h2 className="sb-dock-panel__title">Analysis</h2>
+        </div>
+        <div className="analysis-popup__header-actions">
+          <PcaColorModeToggle
+            className="analysis-popup__color-toggle"
+            colorMode={colorMode}
+            onColorModeChange={setColorMode}
+          />
+          <button
+            type="button"
+            className="analysis-popup__close sb-dock-panel__close"
+            onClick={handleClose}
+            aria-label="Close analysis"
+          >
+            ×
+          </button>
+        </div>
+      </div>
       <AnalysisPlotSection
         layout="popup"
         pca={analysis.pca}
@@ -344,6 +362,9 @@ function AnalysisPopup({
         highlightedTreeId={highlightedTreeId}
         selectedTreeId={selectedTreeId}
         visibleTreeIds={visibleTreeIds}
+        colorMode={colorMode}
+        onColorModeChange={setColorMode}
+        showColorToggle={false}
         onHoverTree={onHoverTree}
         onSelectTree={onSelectTree}
       />
@@ -352,7 +373,7 @@ function AnalysisPopup({
         className="analysis-popup__more"
         onClick={onExpand}
       >
-        See more
+        Open full analysis
       </button>
     </div>
   );
@@ -367,6 +388,9 @@ function AnalysisPlotSection({
   onHoverTree,
   onSelectTree,
   layout = "default",
+  colorMode,
+  onColorModeChange,
+  showColorToggle,
 }: {
   pca: AnalysisResponse["pca"];
   trees: TreeFeature[];
@@ -376,6 +400,9 @@ function AnalysisPlotSection({
   onHoverTree: (treeId: number | null) => void;
   onSelectTree: (treeId: number | null) => void;
   layout?: "default" | "popup";
+  colorMode?: PcaColorMode;
+  onColorModeChange?: (mode: PcaColorMode) => void;
+  showColorToggle?: boolean;
 }) {
   return (
     <section className="analysis-page__plot" aria-label="PCA scatter plot">
@@ -386,6 +413,9 @@ function AnalysisPlotSection({
         highlightedTreeId={highlightedTreeId}
         selectedTreeId={selectedTreeId}
         visibleTreeIds={visibleTreeIds}
+        colorMode={colorMode}
+        onColorModeChange={onColorModeChange}
+        showColorToggle={showColorToggle}
         onHoverTree={onHoverTree}
         onSelectTree={onSelectTree}
       />
@@ -873,7 +903,8 @@ export function AnalysisPanelTab({
       onClick={onToggle}
       aria-expanded={open}
     >
-      Analysis
+      <IconAnalysis />
+      <span>Analysis</span>
     </button>
   );
 }

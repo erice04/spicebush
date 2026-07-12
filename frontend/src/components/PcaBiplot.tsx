@@ -4,8 +4,15 @@ import type { PcaPoint, PcaResult } from "../types/analysis";
 import type { TreeFeature } from "../types";
 import { formatSex, formatStemCount } from "../utils/labels";
 import { isUncertainPrediction } from "../utils/sexPrediction";
-import { SEX_COLORS, SEX_MARKER_STROKE } from "../theme/sexColors";
+import {
+  PCA_SEX_COLORS,
+  PCA_SEX_LEGEND_ITEMS,
+  SEX_MARKER_STROKE,
+  pcaSexFillColor,
+} from "../theme/sexColors";
 import "./PcaBiplot.css";
+
+type ColorMode = "predicted" | "field";
 
 interface PcaBiplotProps {
   pca: PcaResult;
@@ -16,13 +23,64 @@ interface PcaBiplotProps {
   layout?: "default" | "popup";
   visibleTreeIds?: number[];
   trees?: TreeFeature[];
+  colorMode?: ColorMode;
+  onColorModeChange?: (mode: ColorMode) => void;
+  /** When false, the parent is expected to render the toggle. Default true. */
+  showColorToggle?: boolean;
 }
 
-const MALE_COLOR = SEX_COLORS.male;
-const FEMALE_COLOR = SEX_COLORS.female;
-const JUVENILE_COLOR = SEX_COLORS.juvenile;
-const UNLABELED_COLOR = SEX_COLORS.unknown;
-const UNCERTAIN_COLOR = SEX_COLORS.uncertain;
+export type PcaColorMode = ColorMode;
+
+export function PcaColorModeToggle({
+  colorMode,
+  onColorModeChange,
+  className = "",
+}: {
+  colorMode: ColorMode;
+  onColorModeChange: (mode: ColorMode) => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`pca-biplot__color-toggle${
+        colorMode === "predicted"
+          ? " pca-biplot__color-toggle--predicted"
+          : " pca-biplot__color-toggle--field"
+      }${className ? ` ${className}` : ""}`}
+      role="group"
+      aria-label="Point coloring"
+    >
+      <span className="pca-biplot__color-toggle-thumb" aria-hidden="true" />
+      <button
+        type="button"
+        className={`pca-biplot__color-option${
+          colorMode === "field" ? " pca-biplot__color-option--active" : ""
+        }`}
+        aria-pressed={colorMode === "field"}
+        onClick={() => onColorModeChange("field")}
+      >
+        Field Observations
+      </button>
+      <button
+        type="button"
+        className={`pca-biplot__color-option${
+          colorMode === "predicted"
+            ? " pca-biplot__color-option--active"
+            : ""
+        }`}
+        aria-pressed={colorMode === "predicted"}
+        onClick={() => onColorModeChange("predicted")}
+      >
+        Model Predictions
+      </button>
+    </div>
+  );
+}
+
+const MALE_COLOR = PCA_SEX_COLORS.male;
+const FEMALE_COLOR = PCA_SEX_COLORS.female;
+const UNLABELED_COLOR = PCA_SEX_COLORS.unknown;
+const UNCERTAIN_COLOR = PCA_SEX_COLORS.uncertain;
 const SELECTED_COLOR = "#ffe566";
 const SELECTED_STROKE = "#3d3a00";
 const HOVER_STROKE = "#2d4a2d";
@@ -30,24 +88,20 @@ const KNOWN_RADIUS = 3.5;
 const PREDICTED_MARKER_SIZE = 10;
 const PREDICTED_MARKER_SIZE_FULL = 11;
 
-const MARGIN = { top: 12, right: 28, bottom: 52, left: 56 };
-const POPUP_MARGIN = { top: 8, right: 20, bottom: 36, left: 42 };
+const MARGIN = { top: 12, right: 28, bottom: 58, left: 56 };
+const POPUP_MARGIN = { top: 10, right: 22, bottom: 46, left: 46 };
 const CHART_TITLE = "Morphology PCA";
 const POPUP_CHART_REF_WIDTH = 280;
 
 function isPredictedPoint(point: PcaPoint): boolean {
-  // Juveniles are a recorded category (not a sex prediction).
-  return !point.sex_known && point.sex !== "J";
+  return !point.sex_known;
 }
 
-function pointColor(
+function predictedPointColor(
   sex: string | null,
   sexKnown: boolean,
   probabilityFemale: number | null,
 ): string {
-  if (sex === "J") {
-    return JUVENILE_COLOR;
-  }
   if (sexKnown && sex === "M") {
     return MALE_COLOR;
   }
@@ -64,17 +118,26 @@ function pointColor(
   return probabilityFemale >= 0.5 ? FEMALE_COLOR : MALE_COLOR;
 }
 
+function pointFill(point: PcaPoint, colorMode: ColorMode): string {
+  if (colorMode === "field") {
+    return pcaSexFillColor(point.sex);
+  }
+  return predictedPointColor(
+    point.sex,
+    point.sex_known,
+    point.probability_female,
+  );
+}
+
 function applyPointStyles(
   point: PcaPoint,
   highlightedTreeId: number | null,
   selectedTreeId: number | null,
-  _layout: "default" | "popup" = "default",
+  colorMode: ColorMode,
 ) {
   const isHighlighted = point.id === highlightedTreeId;
   const isSelected = point.id === selectedTreeId;
-  const fill = isSelected
-    ? SELECTED_COLOR
-    : pointColor(point.sex, point.sex_known, point.probability_female);
+  const fill = isSelected ? SELECTED_COLOR : pointFill(point, colorMode);
   const stroke = isSelected
     ? SELECTED_STROKE
     : isHighlighted
@@ -115,16 +178,15 @@ function renderPointMark(
   highlightedTreeId: number | null,
   selectedTreeId: number | null,
   layout: "default" | "popup" = "default",
+  colorMode: ColorMode = "predicted",
 ) {
   const { fill, stroke, strokeWidth, isHighlighted, isSelected } =
-    applyPointStyles(
-      point,
-      highlightedTreeId,
-      selectedTreeId,
-      layout,
-    );
+    applyPointStyles(point, highlightedTreeId, selectedTreeId, colorMode);
 
-  if (!isPredictedPoint(point)) {
+  const usePredictedMarker =
+    colorMode === "predicted" && isPredictedPoint(point);
+
+  if (!usePredictedMarker) {
     group
       .selectAll("circle")
       .data([point])
@@ -201,6 +263,9 @@ export default function PcaBiplot({
   layout = "default",
   visibleTreeIds,
   trees = [],
+  colorMode: colorModeProp,
+  onColorModeChange,
+  showColorToggle = true,
 }: PcaBiplotProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const biplotRef = useRef<HTMLDivElement | null>(null);
@@ -208,6 +273,12 @@ export default function PcaBiplot({
   const handlersRef = useRef({ onHoverTree, onSelectTree });
   const plotClipId = useId().replace(/:/g, "");
   const [dimensions, setDimensions] = useState({ width: 640, height: 480 });
+  const [internalColorMode, setInternalColorMode] =
+    useState<ColorMode>("predicted");
+  const colorMode = colorModeProp ?? internalColorMode;
+  const setColorMode = onColorModeChange ?? setInternalColorMode;
+  const colorModeRef = useRef<ColorMode>(colorMode);
+  colorModeRef.current = colorMode;
   handlersRef.current = { onHoverTree, onSelectTree };
 
   const plotPoints = useMemo(() => {
@@ -354,7 +425,7 @@ export default function PcaBiplot({
     root
       .append("text")
       .attr("x", innerWidth / 2)
-      .attr("y", innerHeight + (layout === "popup" ? 30 : 40))
+      .attr("y", innerHeight + (layout === "popup" ? 34 : 46))
       .attr("text-anchor", "middle")
       .attr("class", "pca-biplot__axis-label")
       .text(`PC1 (${pc1Percent}%)`);
@@ -363,7 +434,7 @@ export default function PcaBiplot({
       .append("text")
       .attr("transform", "rotate(-90)")
       .attr("x", -innerHeight / 2)
-      .attr("y", layout === "popup" ? -34 : -42)
+      .attr("y", layout === "popup" ? -36 : -42)
       .attr("text-anchor", "middle")
       .attr("class", "pca-biplot__axis-label")
       .text(`PC2 (${pc2Percent}%)`);
@@ -392,7 +463,14 @@ export default function PcaBiplot({
       });
 
     pointGroups.each(function (point) {
-      renderPointMark(d3.select(this), point, null, null, layout);
+      renderPointMark(
+        d3.select(this),
+        point,
+        null,
+        null,
+        layout,
+        colorModeRef.current,
+      );
     });
 
     const updatePlot = (transform: d3.ZoomTransform) => {
@@ -480,40 +558,38 @@ export default function PcaBiplot({
         highlightedTreeId,
         selectedTreeId,
         layout,
+        colorMode,
       );
     });
 
     raiseActivePoints(points, highlightedTreeId, selectedTreeId);
-  }, [highlightedTreeId, selectedTreeId, layout]);
+  }, [
+    colorMode,
+    dimensions,
+    highlightedTreeId,
+    layout,
+    plotPoints,
+    selectedTreeId,
+  ]);
 
-  const knownLegendItems = (
+  const predictedLegendItems = (
     <>
       <span className="pca-biplot__legend-item">
         <span className="pca-biplot__legend-symbol" aria-hidden="true">
           <span className="pca-biplot__swatch" style={{ background: FEMALE_COLOR }} />
         </span>
-        <span className="pca-biplot__legend-label">Female (F)</span>
+        <span className="pca-biplot__legend-label">Female</span>
       </span>
       <span className="pca-biplot__legend-item">
         <span className="pca-biplot__legend-symbol" aria-hidden="true">
           <span className="pca-biplot__swatch" style={{ background: MALE_COLOR }} />
         </span>
-        <span className="pca-biplot__legend-label">Male (M)</span>
+        <span className="pca-biplot__legend-label">Male</span>
       </span>
-      <span className="pca-biplot__legend-item">
-        <span className="pca-biplot__legend-symbol" aria-hidden="true">
-          <span
-            className="pca-biplot__swatch"
-            style={{ background: JUVENILE_COLOR }}
-          />
-        </span>
-        <span className="pca-biplot__legend-label">Juvenile (J)</span>
-      </span>
-    </>
-  );
-
-  const predictedLegendItems = (
-    <>
+      <span
+        className="pca-biplot__legend-item pca-biplot__legend-item--spacer"
+        aria-hidden="true"
+      />
       <span className="pca-biplot__legend-item">
         <span className="pca-biplot__legend-symbol" aria-hidden="true">
           <span
@@ -523,7 +599,7 @@ export default function PcaBiplot({
             +
           </span>
         </span>
-        <span className="pca-biplot__legend-label">Predicted female (U)</span>
+        <span className="pca-biplot__legend-label">Predicted Female</span>
       </span>
       <span className="pca-biplot__legend-item">
         <span className="pca-biplot__legend-symbol" aria-hidden="true">
@@ -534,30 +610,52 @@ export default function PcaBiplot({
             +
           </span>
         </span>
-        <span className="pca-biplot__legend-label">Predicted male (U)</span>
+        <span className="pca-biplot__legend-label">Predicted Male</span>
+      </span>
+      <span className="pca-biplot__legend-item pca-biplot__legend-item--uncertain">
+        <span className="pca-biplot__legend-symbol" aria-hidden="true">
+          <span
+            className="pca-biplot__marker pca-biplot__marker--plus"
+            style={{ color: UNCERTAIN_COLOR }}
+          >
+            +
+          </span>
+        </span>
+        <span className="pca-biplot__legend-label">Uncertain</span>
       </span>
     </>
   );
 
-  const uncertainLegendItem = (
-    <span className="pca-biplot__legend-item pca-biplot__legend-item--uncertain">
+  const fieldLegendItems = PCA_SEX_LEGEND_ITEMS.map((item) => (
+    <span key={item.key} className="pca-biplot__legend-item">
       <span className="pca-biplot__legend-symbol" aria-hidden="true">
         <span
-          className="pca-biplot__marker pca-biplot__marker--plus"
-          style={{ color: UNCERTAIN_COLOR }}
-        >
-          +
-        </span>
+          className="pca-biplot__swatch"
+          style={{ background: item.color }}
+        />
       </span>
-      <span className="pca-biplot__legend-label">Uncertain (P≈0.5)</span>
+      <span className="pca-biplot__legend-label">{item.label}</span>
     </span>
-  );
+  ));
 
   const legendGrid = (
-    <div className="pca-biplot__legend-grid">
-      {knownLegendItems}
-      {predictedLegendItems}
-      {uncertainLegendItem}
+    <div className="pca-biplot__legend-stack">
+      <div
+        className={`pca-biplot__legend-grid${
+          colorMode === "predicted" ? "" : " pca-biplot__legend-grid--inert"
+        }`}
+        aria-hidden={colorMode !== "predicted"}
+      >
+        {predictedLegendItems}
+      </div>
+      <div
+        className={`pca-biplot__legend-grid pca-biplot__legend-grid--field${
+          colorMode === "field" ? "" : " pca-biplot__legend-grid--inert"
+        }`}
+        aria-hidden={colorMode !== "field"}
+      >
+        {fieldLegendItems}
+      </div>
     </div>
   );
 
@@ -577,14 +675,32 @@ export default function PcaBiplot({
           <h3 className="pca-biplot__heading">{CHART_TITLE}</h3>
         </div>
       ) : (
-        <h3 className="pca-biplot__heading">{CHART_TITLE}</h3>
+        <div className="pca-biplot__intro pca-biplot__intro--fullpage">
+          <h3 className="pca-biplot__heading">{CHART_TITLE}</h3>
+          {showColorToggle && (
+            <PcaColorModeToggle
+              colorMode={colorMode}
+              onColorModeChange={setColorMode}
+            />
+          )}
+        </div>
+      )}
+      {showColorToggle && layout === "popup" && (
+        <PcaColorModeToggle
+          colorMode={colorMode}
+          onColorModeChange={setColorMode}
+        />
       )}
       <div ref={containerRef} className="pca-biplot__chart">
         <svg
           ref={svgRef}
           className="pca-biplot__svg"
           role="img"
-          aria-label="PCA scatter plot of tree morphology"
+          aria-label={
+            colorMode === "predicted"
+              ? "PCA scatter plot colored by model prediction"
+              : "PCA scatter plot colored by field observations"
+          }
         />
         {selectedDetail && (
           <aside
@@ -638,12 +754,13 @@ export default function PcaBiplot({
                   )}
                 </dd>
               </div>
-              {selectedDetail.point.sex_known ? (
-                <div>
-                  <dt>Sex</dt>
-                  <dd>{formatSex(selectedDetail.point.sex)}</dd>
-                </div>
-              ) : selectedDetail.point.probability_female !== null ? (
+              <div>
+                <dt>Sex</dt>
+                <dd>{formatSex(selectedDetail.point.sex)}</dd>
+              </div>
+              {colorMode === "predicted" &&
+              !selectedDetail.point.sex_known &&
+              selectedDetail.point.probability_female !== null ? (
                 <div>
                   <dt>Model</dt>
                   <dd>

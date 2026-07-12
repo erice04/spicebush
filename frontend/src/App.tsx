@@ -6,6 +6,7 @@ import DataPanel from "./components/DataPanel";
 import RoutePanel from "./components/RoutePanel";
 import AnalysisPanel, { AnalysisPanelTab } from "./components/AnalysisPanel";
 import HelpPanel from "./components/HelpPanel";
+import MapLayersControl from "./components/MapLayersControl";
 import type {
   BasemapStyle,
   SelectionState,
@@ -50,9 +51,11 @@ import "./App.css";
 function App() {
   const [trees, setTrees] = useState<TreeFeature[]>([]);
   const [selectedTree, setSelectedTree] = useState<TreeFeature | null>(null);
-  const [basemap, setBasemap] = useState<BasemapStyle>("terrain");
+  const [basemap, setBasemap] = useState<BasemapStyle>("satellite");
   const [densityHeatmap, setDensityHeatmap] = useState(false);
   const [showTreePoints, setShowTreePoints] = useState(true);
+  const [colorBySex, setColorBySex] = useState(true);
+  const [layersPanelOpen, setLayersPanelOpen] = useState(false);
   const [selection, setSelection] = useState<SelectionState | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const hasOpenedHelp = useRef(false);
@@ -70,16 +73,15 @@ function App() {
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [analysisExpanded, setAnalysisExpanded] = useState(false);
   const [analysisPageExiting, setAnalysisPageExiting] = useState(false);
-  const [analysisPopupClosing, setAnalysisPopupClosing] = useState(false);
-  const [analysisPopupHeight, setAnalysisPopupHeight] = useState(0);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [routeExpanded, setRouteExpanded] = useState(false);
   const [filterExpanded, setFilterExpanded] = useState(false);
+  const [routeCloseSignal, setRouteCloseSignal] = useState(0);
+  const [filterCloseSignal, setFilterCloseSignal] = useState(0);
   const [highlightedTreeId, setHighlightedTreeId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const appMainRef = useRef<HTMLElement>(null);
-  const appHeaderRef = useRef<HTMLElement>(null);
 
   const bounds = useMemo(
     () => (trees.length > 0 ? computeDataBounds(trees) : null),
@@ -560,125 +562,27 @@ function App() {
   }, [analysis, selectedTree]);
 
   const analysisPopupOpen = analysisOpen && !analysisExpanded;
-  /** Layout signal for ID card: drop as soon as popup close animation starts. */
-  const analysisLayoutActive = analysisPopupOpen && !analysisPopupClosing;
-  const toolboxOverlayOpen = analysisLayoutActive || routeExpanded;
   const showAnalysisPage =
     analysisOpen && (analysisExpanded || analysisPageExiting);
 
-  useLayoutEffect(() => {
-    if (loading || error || !mapboxToken) {
-      return;
+  /** One overlay panel at a time: opening any panel closes the other three. */
+  const closeOtherPanels = (
+    except: "route" | "filters" | "layers" | "analysis",
+  ) => {
+    if (except !== "route") {
+      setRouteCloseSignal((signal) => signal + 1);
     }
-    const header = appHeaderRef.current;
-    if (!header) {
-      return;
+    if (except !== "filters") {
+      setFilterCloseSignal((signal) => signal + 1);
     }
-
-    const FULL = {
-      font: 0.85,
-      padY: 0.45,
-      padX: 0.9,
-      gap: 1.35,
-      checkFont: 0.7,
-      checkSize: 0.7,
-      radius: 8,
-      pad: 3,
-      headerGap: 1,
-    };
-    const MIN_SCALE = 0.48;
-    const MIN_GAP_PX = 10;
-
-    const applyScale = (scale: number) => {
-      const s = Math.max(MIN_SCALE, Math.min(1, scale));
-      header.style.setProperty(
-        "--header-toggle-font",
-        `${(FULL.font * s).toFixed(3)}rem`,
-      );
-      header.style.setProperty(
-        "--header-toggle-pad-y",
-        `${(FULL.padY * s).toFixed(3)}rem`,
-      );
-      header.style.setProperty(
-        "--header-toggle-pad-x",
-        `${(FULL.padX * s).toFixed(3)}rem`,
-      );
-      header.style.setProperty(
-        "--header-toggle-gap",
-        `${(FULL.gap * s).toFixed(3)}rem`,
-      );
-      header.style.setProperty(
-        "--header-toggle-radius",
-        `${(FULL.radius * s).toFixed(2)}px`,
-      );
-      header.style.setProperty(
-        "--header-toggle-pad",
-        `${Math.max(2, FULL.pad * s).toFixed(2)}px`,
-      );
-      header.style.setProperty(
-        "--density-check-font",
-        `${(FULL.checkFont * s).toFixed(3)}rem`,
-      );
-      header.style.setProperty(
-        "--density-check-size",
-        `${(FULL.checkSize * s).toFixed(3)}rem`,
-      );
-      header.style.setProperty(
-        "--header-cluster-gap",
-        `${(FULL.headerGap * s).toFixed(3)}rem`,
-      );
-    };
-
-    const fitHeaderToggles = () => {
-      let scale = 1;
-      for (let i = 0; i < 12; i++) {
-        applyScale(scale);
-        const title = header.querySelector(
-          ".app-header__title",
-        ) as HTMLElement | null;
-        const toggles = header.querySelector(
-          ".app-header__toggles",
-        ) as HTMLElement | null;
-        if (!title || !toggles) {
-          break;
-        }
-        const titleRight = title.getBoundingClientRect().right;
-        const togglesLeft = toggles.getBoundingClientRect().left;
-        const gap = togglesLeft - titleRight;
-        // Title flex-shrinks first, so check text overflow — not just box gap.
-        const titleOverflows = title.scrollWidth > title.clientWidth + 1;
-        if (!titleOverflows && gap >= MIN_GAP_PX) {
-          break;
-        }
-        const togglesWidth = toggles.getBoundingClientRect().width;
-        if (togglesWidth <= 0) {
-          break;
-        }
-        const overflowPx = titleOverflows
-          ? title.scrollWidth - title.clientWidth + MIN_GAP_PX
-          : MIN_GAP_PX - gap;
-        const next = scale * ((togglesWidth - overflowPx) / togglesWidth);
-        if (!Number.isFinite(next) || next >= scale) {
-          scale = Math.max(MIN_SCALE, scale * 0.92);
-        } else {
-          scale = Math.max(MIN_SCALE, next);
-        }
-        if (scale <= MIN_SCALE) {
-          applyScale(MIN_SCALE);
-          break;
-        }
-      }
-    };
-
-    fitHeaderToggles();
-    const observer = new ResizeObserver(() => fitHeaderToggles());
-    observer.observe(header);
-    window.addEventListener("resize", fitHeaderToggles);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", fitHeaderToggles);
-    };
-  }, [loading, error, mapboxToken, densityHeatmap]);
+    if (except !== "layers") {
+      setLayersPanelOpen(false);
+    }
+    if (except !== "analysis") {
+      setAnalysisOpen(false);
+      setAnalysisExpanded(false);
+    }
+  };
 
   useLayoutEffect(() => {
     if (loading || error || !mapboxToken) {
@@ -688,14 +592,15 @@ function App() {
     if (!main) return;
 
     const FULL = {
-      height: 2.7,
-      font: 0.95,
-      padX: 1.05,
-      fabFont: 1.15,
+      height: 2.55,
+      font: 0.88,
+      padX: 0.85,
+      fabFont: 1.05,
       filterMin: 5.9,
+      railWidth: 5.85,
     };
-    const MIN_SCALE = 0.68;
-    const GAP_PX = 8;
+    const MIN_SCALE = 0.72;
+    const GAP_PX = 10;
 
     const applyScale = (scale: number) => {
       const s = Math.max(MIN_SCALE, Math.min(1, scale));
@@ -719,14 +624,23 @@ function App() {
         "--map-control-filter-min-width",
         `${(FULL.filterMin * s).toFixed(3)}rem`,
       );
+      main.style.setProperty(
+        "--map-tool-rail-width",
+        `${(FULL.railWidth * s).toFixed(3)}rem`,
+      );
     };
 
     const fitControls = () => {
       const left = main.querySelector(
-        ".map-top-left-controls__tabs",
+        ".map-tool-rail--left",
       ) as HTMLElement | null;
-      const right = main.querySelector(".map-top-controls") as HTMLElement | null;
-      if (!left || !right) {
+      const right = main.querySelector(
+        ".map-top-controls",
+      ) as HTMLElement | null;
+      const rightRail = main.querySelector(
+        ".map-tool-rail--right",
+      ) as HTMLElement | null;
+      if (!left && !right) {
         applyScale(1);
         return;
       }
@@ -743,21 +657,22 @@ function App() {
       let scale = 1;
       for (let i = 0; i < 6; i++) {
         applyScale(scale);
-        const rightPills = Array.from(
-          right.querySelectorAll(".help-panel__fab, .filter-panel__tab"),
-        ) as HTMLElement[];
-        const leftWidth = left.getBoundingClientRect().width;
-        const rightWidth =
-          rightPills.length > 0
-            ? rightPills.reduce(
-                (sum, el) => sum + el.getBoundingClientRect().width,
-                0,
-              ) +
-              Math.max(0, rightPills.length - 1) * GAP_PX
-            : 0;
+        const leftWidth = left?.getBoundingClientRect().width ?? 0;
+        const rightWidth = right?.getBoundingClientRect().width ?? 0;
         const needed = leftWidth + rightWidth + GAP_PX;
         if (needed <= available || needed <= 0) break;
         scale = Math.max(MIN_SCALE, scale * (available / needed));
+      }
+
+      // Match sex legend edges to the right tool rail’s real width (min-width token can undershoot).
+      if (rightRail) {
+        const railWidth = rightRail.getBoundingClientRect().width;
+        if (railWidth > 0) {
+          main.style.setProperty(
+            "--map-tool-rail-actual-width",
+            `${railWidth.toFixed(2)}px`,
+          );
+        }
       }
     };
 
@@ -769,7 +684,7 @@ function App() {
       observer.disconnect();
       window.removeEventListener("resize", fitControls);
     };
-  }, [loading, error, mapboxToken, selection, analysis, showAnalysisPage, filterExpanded, helpOpen]);
+  }, [loading, error, mapboxToken, selection, analysis, showAnalysisPage, filterExpanded, helpOpen, layersPanelOpen]);
 
   if (!mapboxToken) {
     return (
@@ -811,7 +726,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="app-header" ref={appHeaderRef}>
+      <header className="app-header">
         <div className="app-header__title">
           <h1>
             Spicebush{" "}
@@ -824,52 +739,28 @@ function App() {
             <span className="app-header__location">New Haven, CT</span>
           </p>
         </div>
-        <div className="app-header__toggles">
-          <div className="density-controls" role="group" aria-label="Plant density">
-            <div className="basemap-toggle">
-              <button
-                type="button"
-                className={densityHeatmap ? "active" : ""}
-                onClick={() => {
-                  setDensityHeatmap((current) => {
-                    if (current) {
-                      setShowTreePoints(true);
-                    }
-                    return !current;
-                  });
-                }}
-                aria-pressed={densityHeatmap}
-              >
-                Density
-              </button>
-            </div>
-            {densityHeatmap && (
-              <label className="density-points-check">
-                <input
-                  type="checkbox"
-                  checked={showTreePoints}
-                  onChange={() => setShowTreePoints((current) => !current)}
-                />
-                Points
-              </label>
-            )}
-          </div>
-          <div className="basemap-toggle" role="group" aria-label="Basemap style">
-            <button
-              type="button"
-              className={basemap === "terrain" ? "active" : ""}
-              onClick={() => setBasemap("terrain")}
-            >
-              Default
-            </button>
-            <button
-              type="button"
-              className={basemap === "satellite" ? "active" : ""}
-              onClick={() => setBasemap("satellite")}
-            >
-              Satellite
-            </button>
-          </div>
+        <div className="app-header__meta">
+          <span className="app-header__stat">
+            {visibleTrees.length === trees.length
+              ? `${trees.length} plants`
+              : `${visibleTrees.length} of ${trees.length} plants`}
+          </span>
+          <span
+            className={`app-header__stat app-header__stat--status app-header__stat--${
+              selectionApiConnecting
+                ? "connecting"
+                : selectionApiAvailable
+                  ? "live"
+                  : "offline"
+            }`}
+          >
+            <span className="app-header__status-dot" aria-hidden="true" />
+            {selectionApiConnecting
+              ? "Connecting"
+              : selectionApiAvailable
+                ? "Live"
+                : "Offline"}
+          </span>
         </div>
       </header>
 
@@ -877,9 +768,9 @@ function App() {
         ref={appMainRef}
         className={[
           "app-main",
-          analysisPopupOpen ? "app-main--analysis-popup-open" : "",
-          analysisPopupOpen || routeExpanded ? "app-main--toolbox-open" : "",
-          filterExpanded ? "app-main--filter-open" : "",
+          analysisPopupOpen || routeExpanded || filterExpanded || layersPanelOpen
+            ? "app-main--panel-open"
+            : "",
         ]
           .filter(Boolean)
           .join(" ")}
@@ -889,6 +780,7 @@ function App() {
           basemap={basemap}
           densityHeatmap={densityHeatmap}
           showTreePoints={showTreePoints}
+          colorBySex={colorBySex}
           mapboxToken={mapboxToken}
           regionPolygon={selection?.regionPolygon ?? null}
           manualExcludedIds={manualExcludedIds}
@@ -899,7 +791,6 @@ function App() {
           routeStops={routeGeoJSON.stops}
           routeStartTreeId={routeStartTreeId}
           routeStartPickMode={routeStartPickMode}
-          analysisPopupHeight={analysisPopupOpen ? analysisPopupHeight + 44 : 0}
           flyToOnSelect
           onSelectTree={handleSelectTree}
           onHoverTree={handleHoverTree}
@@ -912,8 +803,79 @@ function App() {
           }
           onRouteStartPick={handleRouteStartPick}
         />
-        <div className="map-top-left-controls">
-          <div className="map-top-left-controls__tabs">
+        <div
+          className={`map-top-controls${layersPanelOpen ? " map-top-controls--layers-open" : ""}`}
+        >
+          <div
+            className="map-tool-rail map-tool-rail--right"
+            role="toolbar"
+            aria-label="Map tools"
+          >
+            <MapLayersControl
+              basemap={basemap}
+              densityHeatmap={densityHeatmap}
+              showTreePoints={showTreePoints}
+              colorBySex={colorBySex}
+              open={layersPanelOpen}
+              onOpenChange={(next) => {
+                setLayersPanelOpen(next);
+                if (next) {
+                  closeOtherPanels("layers");
+                }
+              }}
+              onBasemapChange={setBasemap}
+              onDensityChange={setDensityHeatmap}
+              onShowTreePointsChange={setShowTreePoints}
+              onColorBySexChange={setColorBySex}
+            />
+            {selection && bounds && (
+              <FilterPanel
+                attributeFilters={selection.attributeFilters}
+                bounds={bounds}
+                visibleCount={visibleTrees.length}
+                totalCount={trees.length}
+                activeFilterCount={activeSelectionCount}
+                hasRegion={selection.regionPolygon !== null}
+                manualExcludedCount={selection.manualExcluded.size}
+                savedSelections={savedSelections}
+                selectionApiAvailable={selectionApiAvailable}
+                selectionApiConnecting={selectionApiConnecting}
+                selectionBusy={selectionBusy}
+                onAttributeFiltersChange={(attributeFilters) =>
+                  setSelection((current) =>
+                    current ? { ...current, attributeFilters } : current,
+                  )
+                }
+                onResetAttributes={() =>
+                  setSelection((current) =>
+                    current
+                      ? { ...current, attributeFilters: createDefaultFilters(bounds) }
+                      : current,
+                  )
+                }
+                onClearRegion={() =>
+                  setSelection((current) =>
+                    current ? { ...current, regionPolygon: null } : current,
+                  )
+                }
+                onClearManualExcluded={() =>
+                  setSelection((current) =>
+                    current ? clearManualExcluded(current) : current,
+                  )
+                }
+                onSaveSelection={handleSaveSelection}
+                onLoadSelection={handleLoadSelection}
+                onDeleteSelection={handleDeleteSelection}
+                onSearchTreeId={handleSearchTreeId}
+                closeSignal={filterCloseSignal}
+                onExpandedChange={(expanded) => {
+                  if (expanded && !filterExpanded) {
+                    closeOtherPanels("filters");
+                  }
+                  setFilterExpanded(expanded);
+                }}
+              />
+            )}
             {selection && bounds && (
               <RoutePanel
                 visibleCount={visibleTrees.length}
@@ -924,14 +886,12 @@ function App() {
                 onGenerateRoute={handleGenerateRoute}
                 onClearRoute={handleClearRoute}
                 onClose={handleCloseRoutePanel}
-                suppress={analysisPopupOpen}
+                closeSignal={routeCloseSignal}
                 onExpandedChange={(expanded) => {
-                  setRouteExpanded(expanded);
-                  if (expanded) {
-                    setAnalysisOpen(false);
-                    setAnalysisExpanded(false);
-                    setAnalysisPopupClosing(false);
+                  if (expanded && !routeExpanded) {
+                    closeOtherPanels("route");
                   }
+                  setRouteExpanded(expanded);
                 }}
               />
             )}
@@ -942,16 +902,21 @@ function App() {
                   if (analysisOpen && !analysisExpanded) {
                     setAnalysisOpen(false);
                     setAnalysisExpanded(false);
-                    setAnalysisPopupClosing(false);
                     return;
                   }
+                  closeOtherPanels("analysis");
                   setAnalysisExpanded(false);
-                  setAnalysisPopupClosing(false);
                   setAnalysisOpen(true);
                 }}
               />
             )}
             <DataPanel apiConnecting={selectionApiConnecting} />
+            <HelpPanel
+              open={helpOpen}
+              individualCount={trees.length}
+              onOpen={() => setHelpOpen(true)}
+              onClose={() => setHelpOpen(false)}
+            />
           </div>
           {analysis && analysisOpen && (
             <AnalysisPanel
@@ -966,80 +931,21 @@ function App() {
               onSelectTree={handleAnalysisSelectTree}
               onExpand={() => setAnalysisExpanded(true)}
               onMinimize={() => setAnalysisExpanded(false)}
-              onCloseBegin={() => setAnalysisPopupClosing(true)}
               onClose={() => {
                 setAnalysisOpen(false);
                 setAnalysisExpanded(false);
                 setAnalysisPageExiting(false);
-                setAnalysisPopupClosing(false);
               }}
-              onPopupHeightChange={setAnalysisPopupHeight}
             />
           )}
           {analysisError && !analysis && (
             <p className="analysis-panel__error">{analysisError}</p>
           )}
         </div>
-        <div className="map-top-controls">
-          <div className="map-top-controls__help">
-            <HelpPanel
-              open={helpOpen}
-              showFab={!showAnalysisPage}
-              individualCount={trees.length}
-              onOpen={() => setHelpOpen(true)}
-              onClose={() => setHelpOpen(false)}
-            />
-          </div>
-          {selection && bounds && !showAnalysisPage && (
-            <FilterPanel
-              attributeFilters={selection.attributeFilters}
-              bounds={bounds}
-              visibleCount={visibleTrees.length}
-              totalCount={trees.length}
-              activeFilterCount={activeSelectionCount}
-              hasRegion={selection.regionPolygon !== null}
-              manualExcludedCount={selection.manualExcluded.size}
-              savedSelections={savedSelections}
-              selectionApiAvailable={selectionApiAvailable}
-              selectionApiConnecting={selectionApiConnecting}
-              selectionBusy={selectionBusy}
-              onAttributeFiltersChange={(attributeFilters) =>
-                setSelection((current) =>
-                  current ? { ...current, attributeFilters } : current,
-                )
-              }
-              onResetAttributes={() =>
-                setSelection((current) =>
-                  current
-                    ? { ...current, attributeFilters: createDefaultFilters(bounds) }
-                    : current,
-                )
-              }
-              onClearRegion={() =>
-                setSelection((current) =>
-                  current ? { ...current, regionPolygon: null } : current,
-                )
-              }
-              onClearManualExcluded={() =>
-                setSelection((current) =>
-                  current ? clearManualExcluded(current) : current,
-                )
-              }
-              onSaveSelection={handleSaveSelection}
-              onLoadSelection={handleLoadSelection}
-              onDeleteSelection={handleDeleteSelection}
-              onSearchTreeId={handleSearchTreeId}
-              onExpandedChange={setFilterExpanded}
-            />
-          )}
-        </div>
         {selectedTree && !showAnalysisPage && (
           <TreeSidebar
             tree={selectedTree}
             manuallyExcluded={selectedIsExcluded}
-            compact={toolboxOverlayOpen}
-            analysisLayout={analysisLayoutActive}
-            reflowKey={toolboxOverlayOpen ? analysisPopupHeight + (routeExpanded ? 1 : 0) : 0}
             sexPrediction={selectedSexPrediction}
             onClose={handleCloseSidebar}
           />
@@ -1064,7 +970,6 @@ function App() {
             setAnalysisOpen(false);
             setAnalysisExpanded(false);
             setAnalysisPageExiting(false);
-            setAnalysisPopupClosing(false);
           }}
         />
       )}

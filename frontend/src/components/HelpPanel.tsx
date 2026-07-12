@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useCloseAnimation } from "../hooks/useCloseAnimation";
+import { IconHelp } from "./railIcons";
 import "./HelpPanel.css";
 
 interface HelpPanelProps {
@@ -47,6 +48,30 @@ export default function HelpPanel({
     bodyRef.current?.scrollTo({ top: 0 });
   }, [activeTab]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    setActiveTab("map");
+    const id = requestAnimationFrame(() => {
+      bodyRef.current?.scrollTo({ top: 0 });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        beginClose(onClose);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, beginClose, onClose]);
+
   if (!open) {
     if (!showFab) {
       return null;
@@ -57,14 +82,30 @@ export default function HelpPanel({
         type="button"
         className="help-panel__fab"
         onClick={onOpen}
-        aria-label="Introduction"
+        aria-label="Info"
+        aria-expanded={false}
       >
-        ?
+        <IconHelp />
+        <span>Info</span>
       </button>
     );
   }
 
-  return createPortal(
+  return (
+    <>
+      {showFab && (
+        <button
+          type="button"
+          className="help-panel__fab help-panel__fab--active"
+          onClick={handleClose}
+          aria-label="Close info"
+          aria-expanded={true}
+        >
+          <IconHelp />
+          <span>Info</span>
+        </button>
+      )}
+      {createPortal(
     <div
       className={`help-panel__backdrop${closing ? " help-panel__backdrop--closing" : ""}`}
       onClick={handleClose}
@@ -74,21 +115,21 @@ export default function HelpPanel({
         className={`help-panel__dialog${closing ? " help-panel__dialog--closing" : ""}`}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
-        aria-labelledby="introduction-title"
+        aria-labelledby="info-title"
       >
         <div className="help-panel__header">
-          <h2 id="introduction-title">Introduction</h2>
+          <h2 id="info-title">Info</h2>
           <button
             type="button"
             className="help-panel__close"
             onClick={handleClose}
-            aria-label="Close introduction"
+            aria-label="Close info"
           >
             ×
           </button>
         </div>
 
-        <div className="help-panel__tabs" role="tablist" aria-label="Introduction topics">
+        <div className="help-panel__tabs" role="tablist" aria-label="Info topics">
           {(Object.keys(TAB_LABELS) as HelpTab[]).map((tab) => (
             <button
               key={tab}
@@ -142,9 +183,9 @@ export default function HelpPanel({
                 measurements, then Save to update the map and analysis.
               </li>
               <li>
-                <strong>Saved Filters</strong>: Save your current checkbox, slider, and
-                selection-tool settings under a name. Choose one from the list and click
-                Load to apply it. Manual double-click exclusions are not saved.
+                <strong>Saved Filters</strong>: Name and save your current filters,
+                then Load them from the dropdown. Double-click exclusions are not
+                saved.
               </li>
             </ul>
           )}
@@ -447,5 +488,7 @@ export default function HelpPanel({
       </div>
     </div>,
     document.body,
+      )}
+    </>
   );
 }
