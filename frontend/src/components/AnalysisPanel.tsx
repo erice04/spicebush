@@ -153,6 +153,26 @@ function traitLabelWithoutUnits(label: string): string {
   return label.replace(/\s*\([^)]*\)\s*$/g, "").trim();
 }
 
+/** Compact variants used when the heatmap is too narrow for the full labels. */
+const SHORT_TRAIT_LABELS: Record<string, string> = {
+  "Stem count": "# Stems",
+  "Base diameter": "Base Diam",
+};
+
+function TraitLabel({ label }: { label: string }) {
+  const full = traitLabelWithoutUnits(label);
+  const short = SHORT_TRAIT_LABELS[full];
+  if (!short) {
+    return <>{full}</>;
+  }
+  return (
+    <>
+      <span className="analysis-panel__trait-label-full">{full}</span>
+      <span className="analysis-panel__trait-label-short">{short}</span>
+    </>
+  );
+}
+
 function CorrelationHeatmap({ correlation }: { correlation: CorrelationMatrix }) {
   const n = correlation.labels.length;
 
@@ -178,7 +198,7 @@ function CorrelationHeatmap({ correlation }: { correlation: CorrelationMatrix })
                 className="analysis-panel__heatmap-col-label"
                 role="columnheader"
               >
-                {traitLabelWithoutUnits(label)}
+                <TraitLabel label={label} />
               </div>
             ))}
             {correlation.matrix.flatMap((row, rowIndex) => [
@@ -187,7 +207,9 @@ function CorrelationHeatmap({ correlation }: { correlation: CorrelationMatrix })
                 className="analysis-panel__heatmap-row-label"
                 role="rowheader"
               >
-                <span>{traitLabelWithoutUnits(correlation.labels[rowIndex])}</span>
+                <span>
+                  <TraitLabel label={correlation.labels[rowIndex]} />
+                </span>
               </div>,
               ...row.map((value, columnIndex) => (
                 <div

@@ -41,7 +41,7 @@
 .analysis-popup {
   position: absolute;
   top: 0;
-  right: calc(var(--map-tool-rail-width, 6.1rem) + var(--map-control-gap, 0.45rem));
+  right: calc(var(--map-tool-rail-width, 7.5rem) + var(--map-control-gap, 0.45rem));
   left: auto;
   z-index: 5;
   width: min(24.5rem, calc(100vw - 2 * var(--overlay-inset, 1.25rem) - 3rem));
@@ -76,19 +76,29 @@
 /* Morphology PCA stays as the graph title inside the biplot. */
 .analysis-popup .pca-biplot__intro {
   display: flex;
-  justify-content: center;
-  padding-inline: 0.55rem;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  /* Chart is 92% wide and centered with 0.35rem inline padding; the y-axis
+     line sits at 4% + 0.35rem + the svg left margin (--pca-axis-inset, set
+     in PcaBiplot.tsx). The -20px starts the title at the left edge of the
+     y-axis tick labels instead of the axis line. */
+  padding-left: calc(4% + 0.35rem + var(--pca-axis-inset, 46px) - 20px);
+  padding-right: 0.55rem;
+  box-sizing: border-box;
+  /* Sit roughly centered between the header rule and the top of the plot. */
+  margin-top: 0.4rem;
   margin-bottom: 0.15rem;
 }
 
 .analysis-popup .pca-biplot__heading {
   margin: 0;
   font-size: var(--sb-dock-title-size);
-  font-weight: var(--sb-dock-title-weight);
+  font-weight: 550;
   letter-spacing: -0.01em;
   line-height: 1.2;
   color: var(--sb-ink);
-  text-align: center;
+  text-align: left;
 }
 
 .analysis-popup__header-actions {
@@ -115,6 +125,17 @@
 .analysis-popup__color-toggle .pca-biplot__color-option {
   padding: 0.22rem 0.55rem;
   font-size: 0.52rem;
+}
+
+/* Narrow viewports: the popup toggle (48vw cap) can't fit the long labels. */
+@media (max-width: 460px) {
+  .analysis-popup__color-toggle .pca-biplot__color-option-full {
+    display: none;
+  }
+
+  .analysis-popup__color-toggle .pca-biplot__color-option-short {
+    display: inline;
+  }
 }
 
 .analysis-popup .sb-dock-panel__header {
@@ -176,9 +197,9 @@
 }
 
 .analysis-page {
-  --analysis-gap: 1.5rem;
-  --analysis-card-pad-x: 2.1rem;
-  --analysis-card-pad-y: 1.7rem;
+  --analysis-gap: clamp(0.9rem, 2.5vw, 1.5rem);
+  --analysis-card-pad-x: clamp(1rem, 3.5vw, 2.1rem);
+  --analysis-card-pad-y: clamp(1.1rem, 3vw, 1.7rem);
   position: fixed;
   inset: 0;
   z-index: 110;
@@ -839,6 +860,12 @@
   flex-shrink: 0;
 }
 
+/* Chart title matches the other card titles (e.g. "Key Findings"). */
+.analysis-page__scroll--brief .pca-biplot__intro--fullpage .pca-biplot__heading,
+.analysis-page__scroll--technical .pca-biplot__intro--fullpage .pca-biplot__heading {
+  font-size: 1.15rem;
+}
+
 .analysis-page__scroll--brief .analysis-page__card-lead,
 .analysis-page__scroll--brief .analysis-page__tech-list,
 .analysis-page__scroll--technical .analysis-page__card-lead,
@@ -1100,6 +1127,23 @@
   flex: 1 1 auto;
   min-width: 0;
   max-width: 100%;
+  container-type: inline-size;
+  container-name: heatmap;
+}
+
+/* Long/short trait labels: short kicks in where the long ones would collide. */
+.analysis-panel__trait-label-short {
+  display: none;
+}
+
+@container heatmap (max-width: 21rem) {
+  .analysis-panel__trait-label-full {
+    display: none;
+  }
+
+  .analysis-panel__trait-label-short {
+    display: inline;
+  }
 }
 
 .analysis-panel__heatmap-grid {
@@ -1140,7 +1184,9 @@
   min-width: 0;
 }
 
-.analysis-panel__heatmap-row-label span {
+/* Direct child only: the nested long/short label spans must keep their own
+   display so the trait-label container query can swap them. */
+.analysis-panel__heatmap-row-label > span {
   display: inline-block;
   writing-mode: vertical-rl;
   transform: rotate(180deg);
@@ -1225,4 +1271,32 @@
   font-size: 0.85rem;
   color: #5a6f5a;
   line-height: 1.45;
+}
+
+/* Phone: the popup becomes a full-width bottom sheet */
+@media (max-width: 640px) {
+  .analysis-popup {
+    position: fixed;
+    top: auto;
+    left: var(--sb-sheet-inset);
+    right: var(--sb-sheet-inset);
+    bottom: var(--sb-sheet-inset);
+    width: auto;
+    max-height: var(--sb-sheet-max-height);
+    z-index: 60;
+    transform-origin: bottom center;
+  }
+
+  .analysis-popup.sb-dock-panel {
+    animation: ui-rise-in 0.22s ease;
+  }
+
+  .analysis-popup.sb-dock-panel.analysis-popup--closing {
+    animation: ui-rise-out 0.18s ease forwards;
+  }
+
+  .analysis-popup--no-enter.sb-dock-panel,
+  .analysis-popup--dormant.sb-dock-panel {
+    animation: none;
+  }
 }

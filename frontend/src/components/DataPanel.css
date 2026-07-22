@@ -173,12 +173,13 @@
 }
 
 .data-page {
+  --data-page-pad-x: clamp(0.75rem, 4vw, 4rem);
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
   min-height: 0;
-  padding: 1rem 4rem;
+  padding: 1rem var(--data-page-pad-x);
   box-sizing: border-box;
   background: var(--sb-canvas);
   animation: ui-fade-in 0.18s ease;
@@ -189,8 +190,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin: -1rem -4rem 0.75rem;
-  padding: 0.7rem 4rem;
+  margin: -1rem calc(-1 * var(--data-page-pad-x)) 0.75rem;
+  padding: 0.7rem var(--data-page-pad-x);
   min-height: 3.85rem;
   box-sizing: border-box;
   flex-shrink: 0;
@@ -571,4 +572,12 @@
 
 .data-page__sort-btn:hover .data-page__sort-icon {
   opacity: 0.9;
+}
+
+/* Phone: tighter header cells so more of the sheet fits before scrolling. */
+@media (max-width: 640px) {
+  .data-page__sheet thead th:not(.data-panel__actions-col):not(.data-plant__add-col) {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
 }

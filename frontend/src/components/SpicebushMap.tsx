@@ -10,6 +10,7 @@ import {
   buildPartialRouteGeoJSON,
   EMPTY_ROUTE_LINE,
   EMPTY_ROUTE_STOPS,
+  haversineDistanceM,
   routeTraceDurationMs,
 } from "../utils/route";
 import {
@@ -283,6 +284,82 @@ function mergeDrawControlsIntoNavigation(map: mapboxgl.Map) {
   }
 
   navGroup.classList.add("spicebush-map-ctrl-group");
+}
+
+const MEASURE_SOURCE = "spicebush-measure";
+const MEASURE_LINE_LAYER = "spicebush-measure-line";
+const MEASURE_POINT_LAYER = "spicebush-measure-points";
+const MEASURE_PREVIEW_SOURCE = "spicebush-measure-preview";
+const MEASURE_PREVIEW_LAYER = "spicebush-measure-preview-line";
+const MEASURE_LABEL_LAYER = "spicebush-measure-label";
+const MEASURE_LEG_LABEL_LAYER = "spicebush-measure-leg-labels";
+// Teal from mapbox-gl-draw's default theme, so measure lines match the
+// region-polygon tool's lines.
+const MEASURE_COLOR = "#3bb2d0";
+
+const EMPTY_FEATURE_COLLECTION: GeoJSON.FeatureCollection = {
+  type: "FeatureCollection",
+  features: [],
+};
+
+const RULER_ICON_SVG =
+  '<svg class="spicebush-ctrl-measure-icon" width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">' +
+  '<path d="M10.9 1.6 1.6 10.9a1 1 0 0 0 0 1.4l2.1 2.1a1 1 0 0 0 1.4 0l9.3-9.3a1 1 0 0 0 0-1.4L12.3 1.6a1 1 0 0 0-1.4 0Z" stroke="currentColor" stroke-width="1.3"/>' +
+  '<path d="m4.2 8.3 1.4 1.4M6.3 6.2l1.4 1.4M8.4 4.1l1.4 1.4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>' +
+  "</svg>";
+
+function measureGeoJSON(points: [number, number][]): GeoJSON.FeatureCollection {
+  const features: GeoJSON.Feature[] = points.map((coordinates, index) => ({
+    type: "Feature",
+    properties: { index },
+    geometry: { type: "Point", coordinates },
+  }));
+
+  // Per-leg distance labels at each segment midpoint.
+  for (let i = 1; i < points.length; i += 1) {
+    const [ax, ay] = points[i - 1];
+    const [bx, by] = points[i];
+    features.push({
+      type: "Feature",
+      properties: {
+        legLabel: formatMeasureDistance(
+          haversineDistanceM(points[i - 1], points[i]),
+        ),
+      },
+      geometry: {
+        type: "Point",
+        coordinates: [(ax + bx) / 2, (ay + by) / 2],
+      },
+    });
+  }
+
+  if (points.length >= 2) {
+    features.push({
+      type: "Feature",
+      properties: {},
+      geometry: { type: "LineString", coordinates: points },
+    });
+  }
+
+  return { type: "FeatureCollection", features };
+}
+
+function measureTotalMeters(points: [number, number][]): number {
+  let total = 0;
+  for (let i = 1; i < points.length; i += 1) {
+    total += haversineDistanceM(points[i - 1], points[i]);
+  }
+  return total;
+}
+
+function formatMeasureDistance(meters: number): string {
+  if (meters >= 1000) {
+    return `${(meters / 1000).toFixed(2)} km`;
+  }
+  if (meters >= 100) {
+    return `${Math.round(meters)} m`;
+  }
+  return `${meters.toFixed(1)} m`;
 }
 
 function extractPolygon(draw: MapboxDraw): Polygon | null {
@@ -671,6 +748,15 @@ export default function SpicebushMap({
   } | null>(null);
   const routeAnimFrameRef = useRef<number | null>(null);
   const lastAnimatedRouteRef = useRef<ComputedRoute | null>(null);
+  const measureActiveRef = useRef(false);
+  const measurePointsRef = useRef<[number, number][]>([]);
+  const measureHoverPointRef = useRef<[number, number] | null>(null);
+  const measureClickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const measureButtonRef = useRef<HTMLButtonElement | null>(null);
+  const setMeasureModeRef = useRef<(active: boolean) => void>(() => {});
+  const [measureActive, setMeasureActive] = useState(false);
 
   treesRef.current = trees;
   excludedIdsRef.current = manualExcludedIds;
@@ -752,6 +838,12 @@ export default function SpicebushMap({
 
         map.on("draw.update", publishDrawnRegion);
         map.on("draw.delete", publishDrawnRegion);
+        map.on("draw.modechange", (event: { mode: string }) => {
+          // Region drawing takes over map clicks — leave measure mode.
+          if (measureActiveRef.current && event.mode !== "simple_select") {
+            setMeasureModeRef.current(false);
+          }
+        });
       } else if (!map.hasControl(drawRef.current)) {
         map.addControl(drawRef.current, "bottom-left");
         patchDrawControlTitles(map);
@@ -762,6 +854,245 @@ export default function SpicebushMap({
     },
     [publishDrawnRegion, syncDrawPolygon],
   );
+
+  const ensureMeasureLayers = useCallback(function ensure(map: mapboxgl.Map) {
+    // isStyleLoaded() is false while tiles stream after a style swap (same
+    // issue as the route layers) — retry on idle instead of dropping the
+    // restore. The source reads measurePointsRef at add time, so no refresh
+    // is needed on the retry.
+    if (!map.isStyleLoaded()) {
+      map.once("idle", () => ensure(map));
+      return;
+    }
+
+    if (!map.getSource(MEASURE_SOURCE)) {
+      map.addSource(MEASURE_SOURCE, {
+        type: "geojson",
+        data: measureGeoJSON(measurePointsRef.current),
+      });
+    }
+    if (!map.getSource(MEASURE_PREVIEW_SOURCE)) {
+      map.addSource(MEASURE_PREVIEW_SOURCE, {
+        type: "geojson",
+        data: EMPTY_FEATURE_COLLECTION,
+      });
+    }
+
+    if (!map.getLayer(MEASURE_PREVIEW_LAYER)) {
+      map.addLayer({
+        id: MEASURE_PREVIEW_LAYER,
+        type: "line",
+        source: MEASURE_PREVIEW_SOURCE,
+        paint: {
+          "line-color": MEASURE_COLOR,
+          "line-width": 2,
+          "line-dasharray": [2, 2],
+          "line-opacity": 0.75,
+        },
+      });
+    }
+    if (!map.getLayer(MEASURE_LINE_LAYER)) {
+      map.addLayer({
+        id: MEASURE_LINE_LAYER,
+        type: "line",
+        source: MEASURE_SOURCE,
+        filter: ["==", "$type", "LineString"],
+        paint: {
+          "line-color": MEASURE_COLOR,
+          "line-width": 2,
+        },
+      });
+    }
+    if (!map.getLayer(MEASURE_POINT_LAYER)) {
+      map.addLayer({
+        id: MEASURE_POINT_LAYER,
+        type: "circle",
+        source: MEASURE_SOURCE,
+        // Midpoint leg-label features share the source — don't dot them.
+        filter: ["all", ["==", "$type", "Point"], ["!has", "legLabel"]],
+        paint: {
+          "circle-radius": 4.5,
+          "circle-color": "#ffffff",
+          "circle-stroke-color": MEASURE_COLOR,
+          "circle-stroke-width": 2,
+        },
+      });
+    }
+    if (!map.getLayer(MEASURE_LEG_LABEL_LAYER)) {
+      map.addLayer({
+        id: MEASURE_LEG_LABEL_LAYER,
+        type: "symbol",
+        source: MEASURE_SOURCE,
+        filter: ["all", ["==", "$type", "Point"], ["has", "legLabel"]],
+        layout: {
+          "text-field": ["get", "legLabel"],
+          "text-size": 11,
+          "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+          "text-offset": [0, -0.7],
+          "text-anchor": "bottom",
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+        },
+        paint: {
+          "text-color": MEASURE_COLOR,
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1.5,
+        },
+      });
+    }
+    if (!map.getLayer(MEASURE_LABEL_LAYER)) {
+      // Running total rendered on the map itself (like the route stop
+      // numbers), following the cursor while previewing.
+      map.addLayer({
+        id: MEASURE_LABEL_LAYER,
+        type: "symbol",
+        source: MEASURE_PREVIEW_SOURCE,
+        filter: ["==", "$type", "Point"],
+        layout: {
+          "text-field": ["get", "label"],
+          "text-size": 12,
+          "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+          "text-offset": [0, -1.1],
+          "text-anchor": "bottom",
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+        },
+        paint: {
+          "text-color": MEASURE_COLOR,
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1.5,
+        },
+      });
+    }
+  }, []);
+
+  const refreshMeasureData = useCallback((map: mapboxgl.Map) => {
+    (
+      map.getSource(MEASURE_SOURCE) as mapboxgl.GeoJSONSource | undefined
+    )?.setData(measureGeoJSON(measurePointsRef.current));
+  }, []);
+
+  /** Redraws the dashed cursor segment and the running-total map label. */
+  const updateMeasurePreview = useCallback(
+    (map: mapboxgl.Map, cursor: [number, number] | null) => {
+      const source = map.getSource(MEASURE_PREVIEW_SOURCE) as
+        | mapboxgl.GeoJSONSource
+        | undefined;
+      if (!source) {
+        return;
+      }
+
+      const points = measurePointsRef.current;
+      const last = points[points.length - 1];
+      const features: GeoJSON.Feature[] = [];
+
+      if (cursor && last) {
+        features.push({
+          type: "Feature",
+          properties: {},
+          geometry: { type: "LineString", coordinates: [last, cursor] },
+        });
+      }
+
+      // Total label sits at the cursor while previewing, else on the last vertex.
+      const anchor = cursor && last ? cursor : last;
+      const legCount = points.length - 1 + (cursor && last ? 1 : 0);
+      if (anchor && legCount >= 1) {
+        const total =
+          measureTotalMeters(points) +
+          (cursor && last ? haversineDistanceM(last, cursor) : 0);
+        features.push({
+          type: "Feature",
+          properties: {
+            // Legs get midpoint labels, so mark the sum once it's a real sum.
+            label:
+              formatMeasureDistance(total) + (legCount >= 2 ? " total" : ""),
+          },
+          geometry: { type: "Point", coordinates: anchor },
+        });
+      }
+
+      source.setData({ type: "FeatureCollection", features });
+    },
+    [],
+  );
+
+  const setMeasureMode = useCallback(
+    (active: boolean) => {
+      measureActiveRef.current = active;
+      measureHoverPointRef.current = null;
+      setMeasureActive(active);
+      if (measureClickTimeoutRef.current) {
+        clearTimeout(measureClickTimeoutRef.current);
+        measureClickTimeoutRef.current = null;
+      }
+      // Finishing keeps the measurement on screen; the next activation (or an
+      // exit with nothing measured) clears it.
+      if (active || measurePointsRef.current.length < 2) {
+        measurePointsRef.current = [];
+      }
+
+      const button = measureButtonRef.current;
+      button?.classList.toggle("spicebush-ctrl-measure-btn--active", active);
+      button?.setAttribute("aria-pressed", String(active));
+
+      const map = mapRef.current;
+      if (!map) {
+        return;
+      }
+
+      if (active) {
+        // Region drawing and measuring both claim map clicks — one at a time.
+        try {
+          drawRef.current?.changeMode("simple_select");
+        } catch {
+          // Draw control may not be fully initialized yet.
+        }
+        ensureMeasureLayers(map);
+      }
+
+      refreshMeasureData(map);
+      updateMeasurePreview(map, null);
+      map.getCanvas().style.cursor =
+        active || routeStartPickModeRef.current ? "crosshair" : "";
+    },
+    [ensureMeasureLayers, refreshMeasureData, updateMeasurePreview],
+  );
+  setMeasureModeRef.current = setMeasureMode;
+
+  /** Adds a plain DOM ruler button to the merged bottom-left nav group. */
+  const setupMeasureControl = useCallback((map: mapboxgl.Map) => {
+    if (measureButtonRef.current?.isConnected) {
+      return;
+    }
+
+    const navGroup = map
+      .getContainer()
+      .querySelector<HTMLElement>(".mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-zoom-in")
+      ?.closest<HTMLElement>(".mapboxgl-ctrl-group");
+    if (!navGroup) {
+      return;
+    }
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "spicebush-ctrl-measure-btn";
+    button.title = "Measure distance";
+    button.setAttribute("aria-label", "Measure distance");
+    button.setAttribute("aria-pressed", "false");
+    button.innerHTML = RULER_ICON_SVG;
+    button.addEventListener("click", () => {
+      setMeasureModeRef.current(!measureActiveRef.current);
+    });
+
+    // Ruler goes at the top of the toolbox, above the polygon/trash buttons.
+    navGroup.insertBefore(
+      button,
+      navGroup.querySelector(".mapbox-gl-draw_polygon") ??
+        navGroup.querySelector(".mapboxgl-ctrl-zoom-in"),
+    );
+    measureButtonRef.current = button;
+  }, []);
 
   const ensureRouteLineLayer = useCallback((map: mapboxgl.Map) => {
     // addSource/addLayer throw if the style is still loading (common on first mount).
@@ -842,6 +1173,10 @@ export default function SpicebushMap({
         "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
         "text-offset": [0, -1.35],
         "text-anchor": "bottom",
+        // Stops sit close together; without these Mapbox's collision pass
+        // silently drops most (often all) of the numbers.
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
       },
       paint: {
         "text-color": "#c9781a",
@@ -910,7 +1245,7 @@ export default function SpicebushMap({
     };
 
     const selectTreeAtPoint = (point: mapboxgl.Point) => {
-      if (drawBlocksInteraction()) {
+      if (drawBlocksInteraction() || measureActiveRef.current) {
         return false;
       }
       const tree = treeFromPoint(point);
@@ -929,7 +1264,11 @@ export default function SpicebushMap({
     };
 
     const toggleTreeAtPoint = (point: mapboxgl.Point) => {
-      if (drawBlocksInteraction() || routeStartPickModeRef.current) {
+      if (
+        drawBlocksInteraction() ||
+        routeStartPickModeRef.current ||
+        measureActiveRef.current
+      ) {
         return false;
       }
       const tree = treeFromPoint(point);
@@ -940,9 +1279,54 @@ export default function SpicebushMap({
       return true;
     };
 
+    const measureVertexAt = (point: mapboxgl.Point) => {
+      const hitBox: [mapboxgl.PointLike, mapboxgl.PointLike] = [
+        [point.x - 6, point.y - 6],
+        [point.x + 6, point.y + 6],
+      ];
+      return map.getLayer(MEASURE_POINT_LAYER)
+        ? map.queryRenderedFeatures(hitBox, { layers: [MEASURE_POINT_LAYER] })
+        : [];
+    };
+
+    // Measure mode: click adds a vertex; clicking an existing vertex removes
+    // it. Deferred like tree clicks so a double-click (finish) can cancel the
+    // two single-click edits it would otherwise trigger.
+    const handleMeasureClick = (event: mapboxgl.MapMouseEvent) => {
+      if (measureClickTimeoutRef.current) {
+        clearTimeout(measureClickTimeoutRef.current);
+      }
+
+      const { point } = event;
+      const lngLat: [number, number] = [event.lngLat.lng, event.lngLat.lat];
+
+      measureClickTimeoutRef.current = setTimeout(() => {
+        measureClickTimeoutRef.current = null;
+        const hits = measureVertexAt(point);
+
+        if (hits.length > 0) {
+          const removeIndex = hits[0].properties?.index as number;
+          measurePointsRef.current = measurePointsRef.current.filter(
+            (_, index) => index !== removeIndex,
+          );
+        } else {
+          ensureMeasureLayers(map);
+          measurePointsRef.current = [...measurePointsRef.current, lngLat];
+        }
+
+        refreshMeasureData(map);
+        updateMeasurePreview(map, measureHoverPointRef.current);
+      }, 250);
+    };
+
     map.on("click", (event) => {
       // Synthetic click after a handled touch tap — ignore to avoid double work / clear.
       if (performance.now() < ignoreClickUntilRef.current) {
+        return;
+      }
+
+      if (measureActiveRef.current) {
+        handleMeasureClick(event);
         return;
       }
 
@@ -988,6 +1372,25 @@ export default function SpicebushMap({
       if (isTouchUi()) {
         return;
       }
+
+      // Double-click finishes the measurement: place the final vertex (unless
+      // on an existing one) and exit mode, leaving the drawing on screen.
+      if (measureActiveRef.current) {
+        event.preventDefault();
+        if (measureClickTimeoutRef.current) {
+          clearTimeout(measureClickTimeoutRef.current);
+          measureClickTimeoutRef.current = null;
+        }
+        if (measureVertexAt(event.point).length === 0) {
+          measurePointsRef.current = [
+            ...measurePointsRef.current,
+            [event.lngLat.lng, event.lngLat.lat],
+          ];
+        }
+        setMeasureModeRef.current(false);
+        return;
+      }
+
       if (drawBlocksInteraction()) {
         return;
       }
@@ -1019,7 +1422,12 @@ export default function SpicebushMap({
     };
 
     const onTouchStart = (event: TouchEvent) => {
-      if (event.touches.length !== 1 || drawBlocksInteraction()) {
+      // In measure mode, let the synthetic click through so taps add points.
+      if (
+        event.touches.length !== 1 ||
+        drawBlocksInteraction() ||
+        measureActiveRef.current
+      ) {
         clearTouchGesture();
         return;
       }
@@ -1099,7 +1507,7 @@ export default function SpicebushMap({
     const handleTreeMouseEnter = (
       event: mapboxgl.MapMouseEvent & { features?: mapboxgl.MapboxGeoJSONFeature[] },
     ) => {
-      if (isTouchUi()) {
+      if (isTouchUi() || measureActiveRef.current) {
         return;
       }
       map.getCanvas().style.cursor = routeStartPickModeRef.current
@@ -1136,9 +1544,10 @@ export default function SpicebushMap({
       if (isTouchUi()) {
         return;
       }
-      map.getCanvas().style.cursor = routeStartPickModeRef.current
-        ? "crosshair"
-        : "";
+      map.getCanvas().style.cursor =
+        routeStartPickModeRef.current || measureActiveRef.current
+          ? "crosshair"
+          : "";
       onHoverTreeRef.current(null);
       popupRef.current?.remove();
       popupRef.current = null;
@@ -1148,7 +1557,23 @@ export default function SpicebushMap({
     map.on("mouseenter", TREE_FOCUS_LAYER, handleTreeMouseEnter);
     map.on("mouseleave", TREE_CIRCLE_LAYER, handleTreeMouseLeave);
     map.on("mouseleave", TREE_FOCUS_LAYER, handleTreeMouseLeave);
-  }, []);
+
+    map.on("mousemove", (event) => {
+      if (!measureActiveRef.current || isTouchUi()) {
+        return;
+      }
+      measureHoverPointRef.current = [event.lngLat.lng, event.lngLat.lat];
+      updateMeasurePreview(map, measureHoverPointRef.current);
+    });
+
+    map.on("mouseout", () => {
+      if (!measureActiveRef.current) {
+        return;
+      }
+      measureHoverPointRef.current = null;
+      updateMeasurePreview(map, null);
+    });
+  }, [ensureMeasureLayers, refreshMeasureData, updateMeasurePreview]);
 
   const addTreeLayer = useCallback((map: mapboxgl.Map) => {
     if (map.getSource("spicebush-trees")) {
@@ -1223,8 +1648,21 @@ export default function SpicebushMap({
       applyBasemapPresentation(map, basemap);
       addTreeLayer(map);
       setupDrawControl(map);
+      // Measure layers sit above trees; restore them (and any in-progress
+      // measurement) after basemap style swaps. Button setup runs after the
+      // draw merge so the ruler lands below the polygon/trash buttons.
+      ensureMeasureLayers(map);
+      refreshMeasureData(map);
+      setupMeasureControl(map);
     },
-    [addTreeLayer, basemap, setupDrawControl],
+    [
+      addTreeLayer,
+      basemap,
+      setupDrawControl,
+      ensureMeasureLayers,
+      refreshMeasureData,
+      setupMeasureControl,
+    ],
   );
   const initializeMapContentRef = useRef(initializeMapContent);
   initializeMapContentRef.current = initializeMapContent;
@@ -1298,6 +1736,11 @@ export default function SpicebushMap({
       drawRef.current = null;
       prevBasemap.current = null;
       treeHandlersAttachedRef.current = false;
+      measureButtonRef.current = null;
+      measureActiveRef.current = false;
+      measurePointsRef.current = [];
+      measureHoverPointRef.current = null;
+      setMeasureActive(false);
       if (routeAnimFrameRef.current !== null) {
         window.cancelAnimationFrame(routeAnimFrameRef.current);
         routeAnimFrameRef.current = null;
@@ -1305,6 +1748,10 @@ export default function SpicebushMap({
       if (clickTimeoutRef.current) {
         clearTimeout(clickTimeoutRef.current);
         clickTimeoutRef.current = null;
+      }
+      if (measureClickTimeoutRef.current) {
+        clearTimeout(measureClickTimeoutRef.current);
+        measureClickTimeoutRef.current = null;
       }
     };
     // Create the map once per token. Style/content updates use separate effects.
@@ -1447,74 +1894,93 @@ export default function SpicebushMap({
 
   useEffect(() => {
     const map = mapRef.current;
-    // Wait until map content exists — creating route layers before style load
-    // throws and can blank the page on first mount.
-    if (!map || !map.isStyleLoaded() || !map.getSource("spicebush-trees")) {
+    if (!map) {
       return;
     }
 
-    ensureRouteLineLayer(map);
-    ensureRouteStopLayer(map);
-
-    if (!map.getSource("survey-route-line")) {
-      return;
-    }
-
-    cancelRouteAnimation();
-
-    const fullLine = routeLine;
-    const fullStops = routeStops;
-    const hasLine =
-      (fullLine.features[0]?.geometry.coordinates.length ?? 0) >= 2;
-
-    if (!route || !hasLine) {
-      lastAnimatedRouteRef.current = null;
-      setRouteLayerData(map, EMPTY_ROUTE_LINE, EMPTY_ROUTE_STOPS);
-      return;
-    }
-
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-
-    // Same route object — only refresh geometry (e.g. tree coords), don't replay.
-    if (route === lastAnimatedRouteRef.current) {
-      setRouteLayerData(map, fullLine, fullStops);
-      return;
-    }
-
-    lastAnimatedRouteRef.current = route;
-
-    if (prefersReducedMotion) {
-      setRouteLayerData(map, fullLine, fullStops);
-      return;
-    }
-
-    const durationMs = routeTraceDurationMs(route.orderedIds.length);
-    const startedAt = performance.now();
+    let disposed = false;
     let completed = false;
 
-    const tick = (now: number) => {
-      const elapsed = now - startedAt;
-      const t = Math.min(1, elapsed / durationMs);
-      const eased = 1 - (1 - t) ** 2;
-      const partial = buildPartialRouteGeoJSON(fullLine, fullStops, eased);
-      setRouteLayerData(map, partial.line, partial.stops);
-
-      if (t < 1) {
-        routeAnimFrameRef.current = window.requestAnimationFrame(tick);
-      } else {
-        completed = true;
-        routeAnimFrameRef.current = null;
-        setRouteLayerData(map, fullLine, fullStops);
+    const apply = () => {
+      if (disposed) {
+        return;
       }
+
+      // Creating route layers before style load throws and can blank the page.
+      // isStyleLoaded() is also false whenever tiles are streaming (routine
+      // with the CT aerial overlays) — retry on idle instead of dropping the
+      // update, which used to leave stale/partial routes stuck on the map.
+      if (!map.isStyleLoaded() || !map.getSource("spicebush-trees")) {
+        map.once("idle", apply);
+        return;
+      }
+
+      ensureRouteLineLayer(map);
+      ensureRouteStopLayer(map);
+
+      if (!map.getSource("survey-route-line")) {
+        return;
+      }
+
+      cancelRouteAnimation();
+
+      const fullLine = routeLine;
+      const fullStops = routeStops;
+      const hasLine =
+        (fullLine.features[0]?.geometry.coordinates.length ?? 0) >= 2;
+
+      if (!route || !hasLine) {
+        lastAnimatedRouteRef.current = null;
+        setRouteLayerData(map, EMPTY_ROUTE_LINE, EMPTY_ROUTE_STOPS);
+        return;
+      }
+
+      const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+
+      // Same route object — only refresh geometry (e.g. tree coords), don't replay.
+      if (route === lastAnimatedRouteRef.current) {
+        setRouteLayerData(map, fullLine, fullStops);
+        return;
+      }
+
+      lastAnimatedRouteRef.current = route;
+
+      if (prefersReducedMotion) {
+        setRouteLayerData(map, fullLine, fullStops);
+        return;
+      }
+
+      const durationMs = routeTraceDurationMs(route.orderedIds.length);
+      const startedAt = performance.now();
+
+      const tick = (now: number) => {
+        const elapsed = now - startedAt;
+        const t = Math.min(1, elapsed / durationMs);
+        const eased = 1 - (1 - t) ** 2;
+        const partial = buildPartialRouteGeoJSON(fullLine, fullStops, eased);
+        setRouteLayerData(map, partial.line, partial.stops);
+
+        if (t < 1) {
+          routeAnimFrameRef.current = window.requestAnimationFrame(tick);
+        } else {
+          completed = true;
+          routeAnimFrameRef.current = null;
+          setRouteLayerData(map, fullLine, fullStops);
+        }
+      };
+
+      const initial = buildPartialRouteGeoJSON(fullLine, fullStops, 0);
+      setRouteLayerData(map, initial.line, initial.stops);
+      routeAnimFrameRef.current = window.requestAnimationFrame(tick);
     };
 
-    const initial = buildPartialRouteGeoJSON(fullLine, fullStops, 0);
-    setRouteLayerData(map, initial.line, initial.stops);
-    routeAnimFrameRef.current = window.requestAnimationFrame(tick);
+    apply();
 
     return () => {
+      disposed = true;
+      map.off("idle", apply);
       cancelRouteAnimation();
       // Allow replay if this effect is cleaned up mid-trace (e.g. Strict Mode).
       if (!completed && lastAnimatedRouteRef.current === route) {
@@ -1537,8 +2003,23 @@ export default function SpicebushMap({
       return;
     }
 
-    map.getCanvas().style.cursor = routeStartPickMode ? "crosshair" : "";
+    map.getCanvas().style.cursor =
+      routeStartPickMode || measureActiveRef.current ? "crosshair" : "";
   }, [routeStartPickMode]);
+
+  useEffect(() => {
+    if (!measureActive) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMeasureMode(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [measureActive, setMeasureMode]);
 
   const sexLegendVisible = colorBySex && showTreePoints;
   const [sexLegendPresent, setSexLegendPresent] = useState(sexLegendVisible);

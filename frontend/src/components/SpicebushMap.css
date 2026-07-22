@@ -134,6 +134,32 @@
   border-top: 1px solid #bbb;
 }
 
+.spicebush-map .spicebush-map-ctrl-group .spicebush-ctrl-measure-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  padding: 0;
+  color: #333;
+}
+
+.spicebush-map .spicebush-map-ctrl-group .spicebush-ctrl-measure-btn .spicebush-ctrl-measure-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.spicebush-map .spicebush-map-ctrl-group .spicebush-ctrl-measure-btn--active,
+.spicebush-map .spicebush-map-ctrl-group .spicebush-ctrl-measure-btn--active:hover {
+  background: var(--sb-accent-soft, #e4ebdc);
+  color: var(--sb-forest, #243d24);
+  box-shadow: inset 0 0 0 1px rgba(61, 122, 61, 0.25);
+}
+
+
 .spicebush-map .tree-hover-popup .mapboxgl-popup-content {
   padding: 0.2rem 0.45rem;
   font-size: 0.72rem;
@@ -156,7 +182,7 @@
   flex-direction: column;
   gap: 0.35rem;
   box-sizing: border-box;
-  width: var(--map-tool-rail-actual-width, var(--map-tool-rail-width, 6.1rem));
+  width: var(--map-tool-rail-actual-width, var(--map-tool-rail-width, 7.5rem));
   max-width: none;
   min-width: 0;
   padding: 0.5rem 0.55rem 0.55rem;
@@ -241,6 +267,14 @@
     white-space: normal;
     max-width: calc(100% - 2rem);
     font-size: 0.55rem;
+  }
+}
+
+/* Phone: rail is icons-only, so stop matching its width — hug the labels. */
+@media (max-width: 640px) {
+  .spicebush-map__sex-legend {
+    width: max-content;
+    max-width: 45vw;
   }
 }
 

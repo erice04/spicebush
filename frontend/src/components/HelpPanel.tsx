@@ -165,9 +165,10 @@ export default function HelpPanel({
                 individuals count toward results. All active filters combine together.
               </li>
               <li>
-                <strong>Selection tool</strong>: Use the polygon tool (bottom-left) to
-                draw a shape. Click vertices, then close on the first point. Only
-                individuals inside the shape are kept.
+                <strong>Selection &amp; Measure</strong> (bottom-left): Draw a
+                polygon to keep only individuals inside by clicking vertices, then
+                close on the first point. The ruler measures distance in meters.
+                Esc to exit for both.
               </li>
               <li>
                 <strong>Route</strong>: Builds a walking path through the
@@ -175,8 +176,8 @@ export default function HelpPanel({
                 generate. Needs at least two visible points.
               </li>
               <li>
-                <strong>Analysis</strong>: Opens a chart of all individuals by trunk
-                size and stem count. Hover or click a point to highlight it on the map.
+                <strong>Analysis</strong>: Opens a statistical analysis of all
+                individuals. Hover or click a point to highlight it on the map.
               </li>
               <li>
                 <strong>Data</strong>: Add or edit plant IDs, GPS, and dated

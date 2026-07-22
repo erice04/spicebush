@@ -98,6 +98,10 @@
   --sb-dock-close-font: 1.05rem;
   --sb-dock-icon-size: 14px;
 
+  /* Phone bottom sheets (map overlay panels at <=640px) */
+  --sb-sheet-inset: 0.75rem;
+  --sb-sheet-max-height: min(68dvh, calc(100dvh - 8.5rem));
+
   --sb-danger: #8b2e2e;
   --sb-danger-bg: #f7ecec;
   --sb-warning-bg: #f7f1e4;

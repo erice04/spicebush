@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import * as d3 from "d3";
 import type { PcaPoint, PcaResult } from "../types/analysis";
 import type { TreeFeature } from "../types";
@@ -59,7 +60,8 @@ export function PcaColorModeToggle({
         aria-pressed={colorMode === "field"}
         onClick={() => onColorModeChange("field")}
       >
-        Field Observations
+        <span className="pca-biplot__color-option-full">Field Observations</span>
+        <span className="pca-biplot__color-option-short">Field</span>
       </button>
       <button
         type="button"
@@ -71,7 +73,8 @@ export function PcaColorModeToggle({
         aria-pressed={colorMode === "predicted"}
         onClick={() => onColorModeChange("predicted")}
       >
-        Model Predictions
+        <span className="pca-biplot__color-option-full">Model Predictions</span>
+        <span className="pca-biplot__color-option-short">Model</span>
       </button>
     </div>
   );
@@ -669,6 +672,14 @@ export default function PcaBiplot({
     <div
       ref={biplotRef}
       className={`pca-biplot${layout === "popup" ? " pca-biplot--popup" : ""}`}
+      style={
+        {
+          // Lets CSS align the chart title with the y-axis line.
+          "--pca-axis-inset": `${
+            (layout === "popup" ? POPUP_MARGIN : MARGIN).left
+          }px`,
+        } as CSSProperties
+      }
     >
       {layout === "popup" ? (
         <div className="pca-biplot__intro">

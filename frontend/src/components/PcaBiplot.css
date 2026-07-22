@@ -243,6 +243,21 @@
   transform: none;
 }
 
+/* Long/short toggle labels: short kicks in where the long one would clip. */
+.pca-biplot__color-option-short {
+  display: none;
+}
+
+@container analysis-plot (max-width: 31rem) {
+  .pca-biplot__color-option-full {
+    display: none;
+  }
+
+  .pca-biplot__color-option-short {
+    display: inline;
+  }
+}
+
 .pca-biplot__legend-grid {
   display: grid;
   grid-template-columns: repeat(3, max-content);
@@ -279,8 +294,13 @@
   flex: 1;
   min-height: 0;
   height: 100%;
-  /* Scales with plot box width; ~1 at 22rem+, down toward 0.72 when narrow */
-  --pca-legend-scale: clamp(0.72, calc(100cqi / 22rem), 1);
+  /*
+   * Scales with plot box width; ~1 at 22rem+, down toward 0.72 when narrow.
+   * tan(atan2()) turns the length ratio into a number — calc() can't divide
+   * by a length, which made this invalid (and every size using it fell back
+   * to inherited values).
+   */
+  --pca-legend-scale: clamp(0.72, tan(atan2(100cqi, 22rem)), 1);
 }
 
 /* Full-page: size to content by default (two-column brief overrides fill) */
@@ -318,6 +338,10 @@
   gap: 0.75rem;
   flex-shrink: 0;
   min-width: 0;
+  box-sizing: border-box;
+  /* Title starts at the left edge of the y-axis tick labels (~22px left of
+     the axis line; --pca-axis-inset is the svg left margin, set in tsx). */
+  padding-left: calc(var(--pca-axis-inset, 56px) - 22px);
 }
 
 .pca-biplot:not(.pca-biplot--popup) .pca-biplot__intro--fullpage .pca-biplot__heading {
@@ -349,6 +373,10 @@
 
 /* Narrow plot: field legend wraps to 2 columns; keep predicted as 3 so Uncertain stays on row 2 */
 @container pca-legend (max-width: 22rem) {
+  .pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-grid {
+    column-gap: calc(0.7rem * var(--pca-legend-scale));
+  }
+
   .pca-biplot:not(.pca-biplot--popup) .pca-biplot__legend-grid--field {
     grid-template-columns: repeat(2, max-content);
   }

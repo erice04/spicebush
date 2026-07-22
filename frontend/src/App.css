@@ -208,7 +208,7 @@
   --map-control-fab-font: 1.05rem;
   --map-control-filter-min-width: 5.4rem;
   --map-control-gap: var(--sb-control-gap);
-  --map-tool-rail-width: 6.1rem;
+  --map-tool-rail-width: 7.5rem;
 }
 
 /* ArcGIS-style unified floating tool rail */
@@ -217,7 +217,13 @@
   flex-direction: column;
   align-items: stretch;
   flex-shrink: 0;
-  min-width: var(--map-tool-rail-width, 5.85rem);
+  /*
+   * Fixed width (not min-width): sized so "Filters (12)" fits, meaning an
+   * active-filter count appears in the trailing blank space without ever
+   * resizing the rail or its buttons.
+   */
+  width: var(--map-tool-rail-width, 7.5rem);
+  min-width: 0;
   overflow: hidden;
   border: 1px solid var(--sb-border);
   border-radius: var(--sb-radius-control);
@@ -333,7 +339,7 @@
 .map-layers-dock {
   position: absolute;
   top: 0;
-  right: calc(var(--map-tool-rail-width, 5.85rem) + var(--map-control-gap, 0.45rem));
+  right: calc(var(--map-tool-rail-width, 7.5rem) + var(--map-control-gap, 0.45rem));
   z-index: 4;
   pointer-events: auto;
 }
@@ -361,7 +367,12 @@
   gap: var(--map-control-gap);
   max-width: calc(100% - 2 * var(--controls-inset));
   max-height: calc(100% - 2 * var(--controls-inset));
-  --map-tool-rail-width: 6.1rem;
+  /*
+   * Do NOT re-declare --map-tool-rail-width here: App.tsx's fit logic sets the
+   * (possibly scaled) value inline on .app-main, and a declaration on this
+   * element would override the inherited inline value for the rail and the
+   * docked panels inside it.
+   */
   pointer-events: none;
 }
 
@@ -375,4 +386,47 @@
 
 .error-text {
   color: var(--sb-danger);
+}
+
+/*
+ * Phone layout (<=640px): the side-docked panels don't fit beside the tool
+ * rail, so the rail collapses to icons and each panel becomes a full-width
+ * bottom sheet (see the matching media blocks in each panel's CSS).
+ */
+@media (max-width: 640px) {
+  .app-main {
+    --overlay-inset: 0.75rem;
+    --controls-inset: 0.75rem;
+  }
+
+  .map-tool-rail {
+    /* Icons-only on phones: hug the buttons instead of the full label width. */
+    width: max-content;
+    min-width: 0;
+  }
+
+  .map-tool-rail .route-panel__tab,
+  .map-tool-rail .analysis-panel__tab,
+  .map-tool-rail .data-panel__tab,
+  .map-tool-rail .filter-panel__tab,
+  .map-tool-rail .help-panel__fab,
+  .map-tool-rail .map-layers-control__rail-btn {
+    justify-content: center;
+    gap: 0;
+    padding-inline: 0.7rem;
+  }
+
+  /* Icons-only rail: drop the text labels (keep the loading spinner). */
+  .map-tool-rail button > span:not(.ui-spinner) {
+    display: none;
+  }
+
+  .map-layers-dock {
+    position: fixed;
+    top: auto;
+    left: var(--sb-sheet-inset);
+    right: var(--sb-sheet-inset);
+    bottom: var(--sb-sheet-inset);
+    z-index: 60;
+  }
 }

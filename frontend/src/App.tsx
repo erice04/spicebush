@@ -597,7 +597,7 @@ function App() {
       padX: 0.85,
       fabFont: 1.05,
       filterMin: 5.9,
-      railWidth: 5.85,
+      railWidth: 7.5,
     };
     const MIN_SCALE = 0.72;
     const GAP_PX = 10;

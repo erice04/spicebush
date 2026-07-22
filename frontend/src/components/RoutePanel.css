@@ -46,7 +46,7 @@
 .route-panel--overlay {
   position: absolute;
   top: 0;
-  right: calc(var(--map-tool-rail-width, 6.1rem) + var(--map-control-gap, 0.45rem));
+  right: calc(var(--map-tool-rail-width, 7.5rem) + var(--map-control-gap, 0.45rem));
   left: auto;
   z-index: 5;
 }
@@ -137,4 +137,28 @@
   border: 1px solid var(--sb-border);
   background: var(--sb-surface-muted);
   color: var(--sb-ink);
+}
+
+/* Phone: full-width bottom sheet instead of a rail-side dock */
+@media (max-width: 640px) {
+  .route-panel,
+  .route-panel--overlay {
+    position: fixed;
+    top: auto;
+    left: var(--sb-sheet-inset);
+    right: var(--sb-sheet-inset);
+    bottom: var(--sb-sheet-inset);
+    width: auto;
+    max-height: var(--sb-sheet-max-height);
+    z-index: 60;
+    transform-origin: bottom center;
+  }
+
+  .route-panel.sb-dock-panel {
+    animation: ui-rise-in 0.22s ease;
+  }
+
+  .route-panel.sb-dock-panel.route-panel--closing {
+    animation: ui-rise-out 0.18s ease forwards;
+  }
 }

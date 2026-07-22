@@ -386,3 +386,22 @@
     max-width: calc(100% - 2 * var(--controls-inset, 1.25rem));
   }
 }
+
+/*
+ * Phone: the card would overlap the right tool rail at its default top-left
+ * spot, so it docks to the bottom of the map (standard mobile map-app POI
+ * card). Scrolls internally if the fit-scale shrink isn't enough.
+ */
+@media (max-width: 640px) {
+  .tree-sidebar {
+    top: auto;
+    bottom: var(--overlay-inset, 0.75rem);
+    left: var(--sb-sheet-inset);
+    right: var(--sb-sheet-inset);
+    width: auto;
+    max-width: none;
+    max-height: min(58dvh, calc(100dvh - 9rem));
+    overflow-y: auto;
+    z-index: 6;
+  }
+}

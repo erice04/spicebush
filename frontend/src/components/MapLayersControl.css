@@ -286,3 +286,20 @@
 .map-layers-dock__card:nth-child(2) { animation-delay: 0.07s; }
 .map-layers-dock__card:nth-child(3) { animation-delay: 0.11s; }
 .map-layers-dock__card:nth-child(4) { animation-delay: 0.15s; }
+
+/* Phone: bottom sheet (positioning lives in App.css with the other overrides) */
+@media (max-width: 640px) {
+  .map-layers-dock {
+    width: auto;
+    max-height: var(--sb-sheet-max-height);
+    transform-origin: bottom center;
+  }
+
+  .map-layers-dock.sb-dock-panel {
+    animation: ui-rise-in 0.22s ease;
+  }
+
+  .map-layers-dock.sb-dock-panel.map-layers-dock--closing {
+    animation: ui-rise-out 0.18s ease forwards;
+  }
+}

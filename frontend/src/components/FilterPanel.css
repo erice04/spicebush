@@ -17,7 +17,7 @@
 .filter-panel--overlay {
   position: absolute;
   top: 0;
-  right: calc(var(--map-tool-rail-width, 5.85rem) + var(--map-control-gap, 0.45rem));
+  right: calc(var(--map-tool-rail-width, 7.5rem) + var(--map-control-gap, 0.45rem));
   left: auto;
   z-index: 4;
 }
@@ -582,10 +582,6 @@
 }
 
 @media (max-width: 520px) {
-  .filter-panel {
-    width: min(17rem, calc(100vw - 2 * var(--overlay-inset) - 2.5rem));
-  }
-
   .filter-panel__save,
   .filter-panel__load,
   .filter-panel__delete {
@@ -595,5 +591,29 @@
 
   .filter-panel__load-row .filter-panel__select {
     flex-basis: 100%;
+  }
+}
+
+/* Phone: full-width bottom sheet instead of a rail-side dock */
+@media (max-width: 640px) {
+  .filter-panel,
+  .filter-panel--overlay {
+    position: fixed;
+    top: auto;
+    left: var(--sb-sheet-inset);
+    right: var(--sb-sheet-inset);
+    bottom: var(--sb-sheet-inset);
+    width: auto;
+    max-height: var(--sb-sheet-max-height);
+    z-index: 60;
+    transform-origin: bottom center;
+  }
+
+  .filter-panel.sb-dock-panel {
+    animation: ui-rise-in 0.22s ease;
+  }
+
+  .filter-panel.sb-dock-panel.filter-panel--closing {
+    animation: ui-rise-out 0.18s ease forwards;
   }
 }
